@@ -1,0 +1,99 @@
+@model CertA.Models.CertificateEntity
+@{
+    ViewData["Title"] = "Certificate Details";
+}
+
+<h2>Certificate Details</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <dl class="row mt-3">
+            <dt class="col-sm-3">Common Name</dt>
+            <dd class="col-sm-9">@Model.CommonName</dd>
+
+            @if (!string.IsNullOrEmpty(Model.SubjectAlternativeNames))
+            {
+                <dt class="col-sm-3">Subject Alternative Names</dt>
+                <dd class="col-sm-9">@Model.SubjectAlternativeNames</dd>
+            }
+
+            <dt class="col-sm-3">Serial Number</dt>
+            <dd class="col-sm-9"><code>@Model.SerialNumber</code></dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-@(Model.Status == CertA.Models.CertificateStatus.Issued ? "success" : "warning")">@Model.Status</span>
+            </dd>
+
+            <dt class="col-sm-3">Type</dt>
+            <dd class="col-sm-9">@Model.Type</dd>
+
+            <dt class="col-sm-3">Issued Date</dt>
+            <dd class="col-sm-9">@Model.IssuedDate.ToString("yyyy-MM-dd HH:mm:ss UTC")</dd>
+
+            <dt class="col-sm-3">Expiry Date</dt>
+            <dd class="col-sm-9">
+                @{
+                    var isExpired = Model.ExpiryDate < DateTime.UtcNow;
+                    var expiryClass = isExpired ? "text-danger" : "text-muted";
+                }
+                <span class="@expiryClass">@Model.ExpiryDate.ToString("yyyy-MM-dd HH:mm:ss UTC")</span>
+            </dd>
+
+            <dt class="col-sm-3">Validity Period</dt>
+            <dd class="col-sm-9">@((Model.ExpiryDate - Model.IssuedDate).Days) days</dd>
+        </dl>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-download"></i> Download Files
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-action="DownloadCertificate" asp-route-id="@Model.Id" class="btn btn-primary">
+                        <i class="bi bi-file-earmark-certificate"></i> Certificate (PEM)
+                    </a>
+                    <a asp-action="DownloadPrivateKey" asp-route-id="@Model.Id" class="btn btn-danger">
+                        <i class="bi bi-key"></i> Private Key (PEM)
+                    </a>
+                    <a asp-action="DownloadPublicKey" asp-route-id="@Model.Id" class="btn btn-info">
+                        <i class="bi bi-key-fill"></i> Public Key (PEM)
+                    </a>
+                    <a asp-action="DownloadPfx" asp-route-id="@Model.Id" class="btn btn-success">
+                        <i class="bi bi-file-earmark-zip"></i> PFX/PKCS#12
+                    </a>
+                </div>
+                <small class="text-muted mt-2 d-block">
+                    PFX password: <code>password</code>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-file-text"></i> Certificate Content (PEM)
+                </h5>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-3 rounded"><code>@Model.CertificatePem</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Certificates
+    </a>
+</div>
+
+

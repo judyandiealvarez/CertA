@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: certa-postgres
+    environment:
+      POSTGRES_DB: certa
+      POSTGRES_USER: certa
+      POSTGRES_PASSWORD: certa123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U certa -d certa"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  certa-app:
+    build:
+      context: .
+      dockerfile: CertA/Dockerfile
+    container_name: certa-app
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=certa;Username=certa;Password=certa123;Port=5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./ca-keys:/app/ca-keys
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

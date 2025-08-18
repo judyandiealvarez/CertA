@@ -1,0 +1,142 @@
+@model CertA.Models.CertificateAuthority
+@{
+    ViewData["Title"] = "Certificate Authority";
+}
+
+<h2>Certificate Authority</h2>
+
+@if (Model == null)
+{
+    <div class="alert alert-warning">
+        <h4>No Certificate Authority Found</h4>
+        <p>A Certificate Authority will be created automatically when you create your first certificate.</p>
+        <a asp-action="Create" class="btn btn-primary">Create First Certificate</a>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-8">
+            <dl class="row mt-3">
+                <dt class="col-sm-3">Name</dt>
+                <dd class="col-sm-9">@Model.Name</dd>
+
+                <dt class="col-sm-3">Common Name</dt>
+                <dd class="col-sm-9">@Model.CommonName</dd>
+
+                <dt class="col-sm-3">Organization</dt>
+                <dd class="col-sm-9">@Model.Organization</dd>
+
+                <dt class="col-sm-3">Country</dt>
+                <dd class="col-sm-9">@Model.Country</dd>
+
+                <dt class="col-sm-3">State</dt>
+                <dd class="col-sm-9">@Model.State</dd>
+
+                <dt class="col-sm-3">Locality</dt>
+                <dd class="col-sm-9">@Model.Locality</dd>
+
+                <dt class="col-sm-3">Created Date</dt>
+                <dd class="col-sm-9">@Model.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss UTC")</dd>
+
+                <dt class="col-sm-3">Expiry Date</dt>
+                <dd class="col-sm-9">
+                    @{
+                        var isExpired = Model.ExpiryDate < DateTime.UtcNow;
+                        var expiryClass = isExpired ? "text-danger" : "text-muted";
+                    }
+                    <span class="@expiryClass">@Model.ExpiryDate.ToString("yyyy-MM-dd HH:mm:ss UTC")</span>
+                </dd>
+
+                <dt class="col-sm-3">Status</dt>
+                <dd class="col-sm-9">
+                    <span class="badge bg-@(Model.IsActive ? "success" : "warning")">
+                        @(Model.IsActive ? "Active" : "Inactive")
+                    </span>
+                </dd>
+            </dl>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-download"></i> Download Root CA Certificate
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Important</h6>
+                        <p class="mb-0">Install this root CA certificate in your system's trusted certificate store to make all certificates issued by this authority trusted.</p>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a asp-action="DownloadRootCA" class="btn btn-primary">
+                            <i class="bi bi-file-earmark-certificate"></i> Root CA Certificate (PEM)
+                        </a>
+                        <a asp-action="DownloadRootCAPfx" class="btn btn-success">
+                            <i class="bi bi-file-earmark-zip"></i> Root CA Certificate (PFX)
+                        </a>
+                    </div>
+                    
+                    <small class="text-muted mt-2 d-block">
+                        PFX password: <code>password</code>
+                    </small>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-shield-check"></i> Installation Instructions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>macOS</h6>
+                    <ol class="small">
+                        <li>Download the Root CA certificate</li>
+                        <li>Double-click the .pem file</li>
+                        <li>Add to System keychain</li>
+                        <li>Set trust to "Always Trust"</li>
+                    </ol>
+                    
+                    <h6>Windows</h6>
+                    <ol class="small">
+                        <li>Download the Root CA certificate</li>
+                        <li>Right-click and "Install Certificate"</li>
+                        <li>Choose "Local Machine"</li>
+                        <li>Select "Trusted Root Certification Authorities"</li>
+                    </ol>
+                    
+                    <h6>Linux</h6>
+                    <ol class="small">
+                        <li>Download the Root CA certificate</li>
+                        <li>Copy to <code>/usr/local/share/ca-certificates/</code></li>
+                        <li>Run <code>sudo update-ca-certificates</code></li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-file-text"></i> Root CA Certificate Content (PEM)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded"><code>@Model.CertificatePem</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Certificates
+    </a>
+</div>

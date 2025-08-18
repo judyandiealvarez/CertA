@@ -1,0 +1,88 @@
+@model CertA.Controllers.CreateCertificateVm
+@{
+    ViewData["Title"] = "New Certificate Request";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-plus-circle"></i> New Certificate Request
+                </h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="CommonName" class="form-label">Common Name (CN)</label>
+                        <input asp-for="CommonName" class="form-control" placeholder="e.g., example.com" />
+                        <span asp-validation-for="CommonName" class="text-danger"></span>
+                        <div class="form-text">The primary domain name for this certificate.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="SubjectAlternativeNames" class="form-label">Subject Alternative Names (SAN)</label>
+                        <input asp-for="SubjectAlternativeNames" class="form-control" placeholder="e.g., www.example.com, api.example.com" />
+                        <span asp-validation-for="SubjectAlternativeNames" class="text-danger"></span>
+                        <div class="form-text">Additional domain names, separated by commas.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="Type" class="form-label">Certificate Type</label>
+                        <select asp-for="Type" class="form-select" asp-items="Html.GetEnumSelectList<CertA.Models.CertificateType>()"></select>
+                        <span asp-validation-for="Type" class="text-danger"></span>
+                        <div class="form-text">The intended use of this certificate.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Requested By</label>
+                        <input class="form-control" placeholder="optional" />
+                    </div>
+                    
+                    
+                    
+                    <div class="d-flex justify-content-between">
+                        <a asp-controller="Certificates" asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Certificates
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Certificate Types
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Server Certificate</h6>
+                        <p class="text-muted">For web servers, load balancers, and other server applications.</p>
+                        
+                        <h6>Client Certificate</h6>
+                        <p class="text-muted">For client authentication and VPN connections.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Code Signing Certificate</h6>
+                        <p class="text-muted">For signing software and code to verify authenticity.</p>
+                        
+                        <h6>Email Certificate</h6>
+                        <p class="text-muted">For S/MIME email encryption and digital signatures.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
