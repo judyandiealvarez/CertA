@@ -1,78 +1,229 @@
 # CertA Architecture Documentation
 
-## Overview
+Comprehensive technical architecture documentation for the CertA Certification Authority system.
 
-CertA is a complete Certification Authority (CA) system built with ASP.NET Core that provides certificate management capabilities through a web interface and REST API.
+## 🏗️ System Overview
 
-## System Architecture
+CertA is a multi-layered web application that provides certificate authority services with user authentication and authorization. The system follows a clean architecture pattern with clear separation of concerns.
+
+### High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    CertA Certification Authority            │
+│                    Presentation Layer                        │
 ├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   Web UI    │  │   REST API  │  │   Health    │         │
-│  │  (Razor)    │  │  (Controllers)│  │   Checks   │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│  Web Interface (ASP.NET Core MVC)                           │
+│  ├── Controllers (MVC Pattern)                              │
+│  ├── Views (Razor Pages)                                    │
+│  └── Static Assets (CSS, JS, Images)                        │
 ├─────────────────────────────────────────────────────────────┤
-│                    Business Logic Layer                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │Certificate  │  │Certificate  │  │   Models    │         │
-│  │  Service    │  │Authority    │  │             │         │
-│  │             │  │  Service    │  │             │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│                   Business Logic Layer                       │
 ├─────────────────────────────────────────────────────────────┤
-│                    Data Access Layer                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │ Entity      │  │ PostgreSQL  │  │   Migrations│         │
-│  │ Framework   │  │  Database   │  │             │         │
-│  │   Core      │  │             │  │             │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│  Services                                                    │
+│  ├── CertificateService                                     │
+│  ├── CertificateAuthorityService                            │
+│  └── Identity Services (ASP.NET Core Identity)              │
+├─────────────────────────────────────────────────────────────┤
+│                     Data Access Layer                        │
+├─────────────────────────────────────────────────────────────┤
+│  Entity Framework Core                                      │
+│  ├── AppDbContext                                           │
+│  ├── Models                                                 │
+│  └── Migrations                                             │
+├─────────────────────────────────────────────────────────────┤
+│                     Data Storage Layer                       │
+├─────────────────────────────────────────────────────────────┤
+│  PostgreSQL Database                                        │
+│  ├── Identity Tables (AspNetUsers, AspNetRoles, etc.)       │
+│  ├── Certificate Tables (Certificates, CertificateAuthorities) │
+│  └── Application Data                                       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Component Architecture
+## 🔐 Authentication & Authorization Architecture
 
-### 1. Presentation Layer
+### Identity System
 
-#### Web UI (Razor Views)
-- **Technology**: ASP.NET Core MVC with Razor Views
-- **Framework**: Bootstrap 5 for responsive design
-- **Features**:
-  - Certificate management interface
-  - CA information display
-  - Download functionality
-  - Form validation
+CertA uses ASP.NET Core Identity for user management and authentication:
 
-#### REST API
-- **Technology**: ASP.NET Core Web API
-- **Format**: JSON responses
-- **Authentication**: None (for development)
-- **Endpoints**: Certificate CRUD operations, CA management
+#### Core Components
+- **ApplicationUser**: Custom user model extending IdentityUser
+- **UserManager**: Manages user operations (create, update, delete)
+- **SignInManager**: Handles authentication (login, logout)
+- **IdentityDbContext**: Database context for identity tables
 
-### 2. Business Logic Layer
-
-#### CertificateService
+#### User Model
 ```csharp
-public interface ICertificateService
+public class ApplicationUser : IdentityUser
 {
-    Task<List<CertificateEntity>> ListAsync();
-    Task<CertificateEntity?> GetAsync(int id);
-    Task<CertificateEntity> CreateAsync(string commonName, string? sans, CertificateType type);
-    Task<byte[]> GetPrivateKeyPemAsync(int id);
-    Task<byte[]> GetPublicKeyPemAsync(int id);
-    Task<byte[]> GetCertificatePemAsync(int id);
-    Task<byte[]> GetPfxAsync(int id, string password);
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? Organization { get; set; }
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+    public bool IsActive { get; set; } = true;
 }
 ```
 
-**Responsibilities:**
-- Certificate lifecycle management
-- Key generation and storage
-- Certificate signing
-- File format conversion (PEM/PFX)
+#### Authentication Flow
+1. **Registration**: User creates account with email/password
+2. **Login**: User authenticates with credentials
+3. **Session Management**: Cookie-based sessions with configurable timeout
+4. **Authorization**: Role-based access control (future enhancement)
 
-#### CertificateAuthorityService
+### Authorization Model
+
+#### User Isolation
+- **Certificate Ownership**: Each certificate belongs to a specific user
+- **Data Separation**: Users can only access their own certificates
+- **Profile Access**: Users can only manage their own profile
+
+#### Access Control Matrix
+
+| Resource | Public Access | Authenticated Users | Owner Only |
+|----------|---------------|-------------------|------------|
+| CA Information | ✅ | ✅ | - |
+| Root CA Download | ✅ | ✅ | - |
+| Certificate List | ❌ | ✅ (own only) | ✅ |
+| Certificate Details | ❌ | ✅ (own only) | ✅ |
+| Certificate Downloads | ❌ | ✅ (own only) | ✅ |
+| Profile Management | ❌ | ✅ (own only) | ✅ |
+
+## 📜 Certificate Architecture
+
+### Certificate Hierarchy
+
+```
+CertA Root CA (4096-bit RSA, 10-year validity)
+├── Self-signed with CA extensions
+├── Basic Constraints: CA=true, pathlen=0
+├── Key Usage: KeyCertSign, CrlSign, DigitalSignature
+└── Subject Key Identifier: SHA-1 hash of public key
+    │
+    └── Issued Certificates (2048-bit RSA, 1-year validity)
+        ├── Signed by Root CA
+        ├── Basic Constraints: CA=false
+        ├── Key Usage: DigitalSignature, KeyEncipherment
+        ├── Extended Key Usage: Server Authentication (1.3.6.1.5.5.7.3.1)
+        └── Subject Alternative Names: Multiple domains/IPs
+```
+
+### Certificate Types
+
+#### Server Certificates
+- **Purpose**: Web servers, APIs, load balancers
+- **Key Usage**: DigitalSignature, KeyEncipherment
+- **Extended Key Usage**: Server Authentication
+- **Validity**: 1 year
+- **Key Size**: 2048-bit RSA
+
+#### Client Certificates
+- **Purpose**: Client authentication, VPN connections
+- **Key Usage**: DigitalSignature, KeyEncipherment
+- **Extended Key Usage**: Client Authentication
+- **Validity**: 1 year
+- **Key Size**: 2048-bit RSA
+
+#### Code Signing Certificates
+- **Purpose**: Software and application signing
+- **Key Usage**: DigitalSignature
+- **Extended Key Usage**: Code Signing
+- **Validity**: 1 year
+- **Key Size**: 2048-bit RSA
+
+#### Email Certificates
+- **Purpose**: Email encryption and digital signatures
+- **Key Usage**: DigitalSignature, KeyEncipherment
+- **Extended Key Usage**: Email Protection
+- **Validity**: 1 year
+- **Key Size**: 2048-bit RSA
+
+### Certificate Extensions
+
+#### Standard Extensions
+- **Basic Constraints**: Defines CA vs end-entity certificates
+- **Key Usage**: Specifies allowed key operations
+- **Extended Key Usage**: Defines certificate purpose
+- **Subject Key Identifier**: Unique identifier for the public key
+- **Subject Alternative Names**: Multiple domain names and IP addresses
+
+#### Custom Extensions
+- **Authority Key Identifier**: Links to CA certificate
+- **Certificate Policies**: Defines certificate usage policies
+- **CRL Distribution Points**: Points to certificate revocation lists
+
+## 🗄️ Database Architecture
+
+### Entity Relationship Diagram
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   AspNetUsers   │    │   Certificates  │    │CertificateAuth. │
+├─────────────────┤    ├─────────────────┤    ├─────────────────┤
+│ Id (PK)         │    │ Id (PK)         │    │ Id (PK)         │
+│ UserName        │    │ CommonName      │    │ Name            │
+│ Email           │    │ SubjectAltNames │    │ CommonName      │
+│ FirstName       │    │ SerialNumber    │    │ Organization    │
+│ LastName        │    │ IssuedDate      │    │ Country         │
+│ Organization    │    │ ExpiryDate      │    │ State           │
+│ CreatedDate     │    │ Status          │    │ Locality        │
+│ IsActive        │    │ Type            │    │ CertificatePem  │
+│ PasswordHash    │    │ CertificatePem  │    │ PrivateKeyPem   │
+│ ...             │    │ PublicKeyPem    │    │ CreatedDate     │
+└─────────────────┘    │ PrivateKeyPem   │    │ ExpiryDate      │
+         │              │ UserId (FK)     │    │ IsActive        │
+         │              └─────────────────┘    └─────────────────┘
+         │                       │
+         └───────────────────────┘
+                    (1:N Relationship)
+```
+
+### Database Schema
+
+#### Identity Tables (ASP.NET Core Identity)
+- **AspNetUsers**: User accounts and profile information
+- **AspNetUserClaims**: User claims and permissions
+- **AspNetUserLogins**: External login providers
+- **AspNetUserTokens**: User tokens for password reset, etc.
+- **AspNetRoles**: Role definitions (future use)
+- **AspNetUserRoles**: User-role assignments (future use)
+- **AspNetRoleClaims**: Role-based claims (future use)
+
+#### Application Tables
+- **Certificates**: User certificates with ownership
+- **CertificateAuthorities**: Root CA information
+
+### Data Relationships
+
+#### User-Certificate Relationship
+- **One-to-Many**: One user can have multiple certificates
+- **Foreign Key**: `Certificates.UserId` references `AspNetUsers.Id`
+- **Cascade Delete**: When user is deleted, their certificates are deleted
+- **User Isolation**: Users can only access their own certificates
+
+#### Certificate Authority
+- **Singleton Pattern**: Only one active CA at a time
+- **Self-Contained**: CA certificate and private key stored in database
+- **Public Access**: CA information accessible without authentication
+
+## 🔧 Service Layer Architecture
+
+### Service Interfaces
+
+#### ICertificateService
+```csharp
+public interface ICertificateService
+{
+    Task<List<CertificateEntity>> ListAsync(string userId);
+    Task<CertificateEntity?> GetAsync(int id, string userId);
+    Task<CertificateEntity> CreateAsync(string commonName, string? sans, CertificateType type, string userId);
+    Task<byte[]> GetPrivateKeyPemAsync(int id, string userId);
+    Task<byte[]> GetPublicKeyPemAsync(int id, string userId);
+    Task<byte[]> GetCertificatePemAsync(int id, string userId);
+    Task<byte[]> GetPfxAsync(int id, string password, string userId);
+}
+```
+
+#### ICertificateAuthorityService
 ```csharp
 public interface ICertificateAuthorityService
 {
@@ -82,364 +233,164 @@ public interface ICertificateAuthorityService
 }
 ```
 
-**Responsibilities:**
-- Root CA management
-- Certificate signing
-- CA certificate generation
-- Trust chain establishment
+### Service Responsibilities
 
-### 3. Data Layer
+#### CertificateService
+- **Certificate CRUD**: Create, read, update, delete certificates
+- **User Filtering**: Ensure users only access their own certificates
+- **File Generation**: Generate PEM and PFX files for download
+- **Validation**: Validate certificate parameters and user permissions
 
-#### Entity Framework Core
-- **Provider**: Npgsql (PostgreSQL)
-- **Configuration**: Code-first approach
-- **Migrations**: Automatic database creation
+#### CertificateAuthorityService
+- **CA Management**: Create and manage root CA
+- **Certificate Signing**: Sign certificate requests with CA private key
+- **CA Information**: Provide CA details for public access
+- **Key Management**: Handle CA private key securely
 
-#### Database Schema
+## 🌐 Web Interface Architecture
 
-```sql
--- Certificate Authorities
-CREATE TABLE "CertificateAuthorities" (
-    "Id" SERIAL PRIMARY KEY,
-    "Name" VARCHAR(255) NOT NULL,
-    "CommonName" VARCHAR(255) NOT NULL,
-    "Organization" VARCHAR(255) NOT NULL,
-    "Country" VARCHAR(2) NOT NULL,
-    "State" VARCHAR(255) NOT NULL,
-    "Locality" VARCHAR(255) NOT NULL,
-    "CertificatePem" TEXT NOT NULL,
-    "PrivateKeyPem" TEXT NOT NULL,
-    "CreatedDate" TIMESTAMP NOT NULL,
-    "ExpiryDate" TIMESTAMP NOT NULL,
-    "IsActive" BOOLEAN NOT NULL DEFAULT true
-);
+### MVC Pattern
 
--- Certificates
-CREATE TABLE "Certificates" (
-    "Id" SERIAL PRIMARY KEY,
-    "CommonName" VARCHAR(255) NOT NULL,
-    "SubjectAlternativeNames" TEXT,
-    "SerialNumber" VARCHAR(50) NOT NULL,
-    "IssuedDate" TIMESTAMP NOT NULL,
-    "ExpiryDate" TIMESTAMP NOT NULL,
-    "Status" INTEGER NOT NULL,
-    "Type" INTEGER NOT NULL,
-    "CertificatePem" TEXT NOT NULL,
-    "PublicKeyPem" TEXT NOT NULL,
-    "PrivateKeyPem" TEXT NOT NULL
-);
-```
+#### Controllers
+- **AccountController**: User authentication and profile management
+- **CertificatesController**: Certificate management with authorization
+- **HomeController**: Dashboard and public pages
 
-## Certificate Architecture
+#### Views
+- **Account Views**: Login, register, profile management
+- **Certificate Views**: List, create, details, download
+- **Shared Views**: Layout, navigation, common components
 
-### CA Hierarchy
+#### Models
+- **View Models**: Data transfer objects for views
+- **Entity Models**: Database entities
+- **Validation Models**: Input validation and error handling
+
+### Navigation Structure
 
 ```
-CertA Root CA (4096-bit RSA)
-├── Self-signed with CA extensions
-├── 10-year validity period
-├── Key Usage: KeyCertSign, CRLSign, DigitalSignature
-├── Basic Constraints: CA=true, pathlen=0
-└── Subject Key Identifier: SHA-1 hash of public key
+Home (Public)
+├── Login (Public)
+├── Register (Public)
+├── Certificate Authority (Public)
+└── Dashboard (Authenticated)
+    ├── My Certificates (Authenticated)
+    │   ├── List Certificates
+    │   ├── Create Certificate
+    │   ├── View Details
+    │   └── Download Files
+    └── Profile (Authenticated)
+        ├── View Profile
+        ├── Update Profile
+        └── Change Password
 ```
 
-### Issued Certificates
+## 🔒 Security Architecture
 
-```
-End Entity Certificate (2048-bit RSA)
-├── Signed by Root CA
-├── 1-year validity period
-├── Key Usage: DigitalSignature, KeyEncipherment
-├── Extended Key Usage: Server Authentication
-├── Subject Alternative Names (SAN) support
-└── Basic Constraints: CA=false
-```
+### Authentication Security
 
-### Certificate Extensions
+#### Password Security
+- **Hashing**: ASP.NET Core Identity password hashing
+- **Requirements**: Minimum 6 characters with complexity
+- **Validation**: Server-side and client-side validation
+- **Storage**: Encrypted password hashes in database
 
-#### Root CA Extensions
-```csharp
-// Basic Constraints
-request.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+#### Session Security
+- **Cookie Configuration**: HTTP-only, secure cookies
+- **Session Timeout**: 12-hour sessions with sliding expiration
+- **CSRF Protection**: Anti-forgery token validation
+- **Secure Headers**: Security headers for XSS protection
 
-// Key Usage
-request.CertificateExtensions.Add(new X509KeyUsageExtension(
-    X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.DigitalSignature, true));
+### Authorization Security
 
-// Subject Key Identifier
-request.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(request.PublicKey, false));
-```
+#### User Isolation
+- **Data Separation**: Complete isolation of user data
+- **Access Control**: Users can only access their own resources
+- **Permission Validation**: Server-side validation of all requests
+- **Audit Logging**: Log all certificate operations
 
-#### End Entity Extensions
-```csharp
-// Basic Constraints
-request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
-
-// Key Usage
-request.CertificateExtensions.Add(new X509KeyUsageExtension(
-    X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
-
-// Extended Key Usage
-request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
-    new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, true)); // Server Authentication
-
-// Subject Alternative Names
-if (!string.IsNullOrEmpty(sans))
-{
-    var sanBuilder = new SubjectAlternativeNameBuilder();
-    foreach (var san in sanList)
-    {
-        if (Uri.IsWellFormedUriString(san, UriKind.Absolute))
-            sanBuilder.AddUri(new Uri(san));
-        else
-            sanBuilder.AddDnsName(san);
-    }
-    request.CertificateExtensions.Add(sanBuilder.Build());
-}
-```
-
-## Security Architecture
-
-### Cryptographic Implementation
-
-#### Key Generation
-```csharp
-// Root CA: 4096-bit RSA
-using var rsa = RSA.Create(4096);
-
-// End Entity: 2048-bit RSA
-using var rsa = RSA.Create(2048);
-```
-
-#### Certificate Signing
-```csharp
-// Create certificate request
-var request = new CertificateRequest(subject, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-
-// Sign with CA
-var signedCert = request.Create(caCert, notBefore, notAfter, serialNumber.ToByteArray());
-```
-
-#### Serial Number Generation
-```csharp
-private static BigInteger GenerateSerialNumber()
-{
-    var random = new byte[20];
-    using var rng = RandomNumberGenerator.Create();
-    rng.GetBytes(random);
-    return new BigInteger(random, true, true);
-}
-```
+#### Certificate Security
+- **Private Key Protection**: Encrypted storage in database
+- **Secure Downloads**: Protected download endpoints
+- **Key Rotation**: Support for certificate renewal
+- **Revocation Support**: Framework for certificate revocation
 
 ### Data Protection
 
-#### Private Key Storage
-- **Format**: PEM encoded
-- **Storage**: Database (encrypted in production)
-- **Access**: Application-level encryption
+#### Database Security
+- **Connection Encryption**: TLS encryption for database connections
+- **Access Control**: Database user with minimal required permissions
+- **Backup Security**: Encrypted backups with secure storage
+- **Audit Logging**: Database access logging
 
-#### Certificate Storage
-- **Format**: PEM encoded
-- **Storage**: Database
-- **Access**: Read-only for downloads
+#### File System Security
+- **Certificate Storage**: Secure storage of certificates and keys
+- **Access Permissions**: Appropriate file permissions
+- **Encryption**: Encryption at rest for sensitive data
+- **Secure Deletion**: Secure deletion of temporary files
 
-## File Format Support
+## 📊 Performance Architecture
 
-### PEM Format
-```
------BEGIN CERTIFICATE-----
-MIIDXTCCAkWgAwIBAgIJA...
------END CERTIFICATE-----
+### Caching Strategy
+- **CA Certificate Caching**: Cache root CA certificate in memory
+- **User Session Caching**: Efficient session management
+- **Database Query Optimization**: Optimized queries with proper indexing
+- **Static Asset Caching**: Browser caching for static resources
 
------BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEA...
------END RSA PRIVATE KEY-----
+### Scalability Considerations
+- **Database Connection Pooling**: Efficient database connections
+- **Async Operations**: Non-blocking I/O operations
+- **Memory Management**: Efficient memory usage for certificate operations
+- **Load Balancing**: Support for horizontal scaling
 
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...
------END PUBLIC KEY-----
-```
+### Monitoring and Logging
+- **Application Logging**: Structured logging with Serilog
+- **Performance Monitoring**: Response time and resource usage
+- **Error Tracking**: Comprehensive error logging and tracking
+- **Security Monitoring**: Authentication and authorization events
 
-### PKCS#12 (PFX) Format
-```csharp
-// Export certificate with private key
-var pfxBytes = certificate.Export(X509ContentType.Pfx, password);
-```
+## 🔄 Deployment Architecture
 
-## Dependency Injection
+### Container Architecture
+- **Web Application**: ASP.NET Core application container
+- **Database**: PostgreSQL container with persistent storage
+- **Load Balancer**: Optional load balancer for high availability
+- **Monitoring**: Optional monitoring and logging containers
 
-### Service Registration
-```csharp
-// Database
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+### Environment Configuration
+- **Development**: Local development with hot reload
+- **Staging**: Pre-production testing environment
+- **Production**: Production deployment with security hardening
 
-// Services
-builder.Services.AddScoped<ICertificateService, CertificateService>();
-builder.Services.AddScoped<ICertificateAuthorityService, CertificateAuthorityService>();
-```
+### Security Hardening
+- **Network Security**: Firewall rules and network isolation
+- **Container Security**: Secure container configuration
+- **Secret Management**: Secure handling of secrets and keys
+- **Backup Strategy**: Regular backups with secure storage
 
-### Service Lifetimes
-- **Scoped**: Database context, business services
-- **Singleton**: Configuration, logging
-- **Transient**: Utility services
-
-## Configuration Management
-
-### appsettings.json
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=certa;Username=certa;Password=password"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft": "Warning"
-    }
-  },
-  "CA": {
-    "DefaultOrganization": "CertA Organization",
-    "DefaultCountry": "US",
-    "DefaultState": "California",
-    "DefaultLocality": "San Francisco"
-  }
-}
-```
-
-### Environment-Specific Configuration
-- **Development**: Local database, detailed logging
-- **Production**: Secure database, minimal logging
-- **Docker**: Containerized database, structured logging
-
-## Error Handling
-
-### Exception Handling Strategy
-```csharp
-try
-{
-    var certificate = await _service.CreateAsync(commonName, sans, type);
-    return Ok(certificate);
-}
-catch (InvalidOperationException ex)
-{
-    _logger.LogError(ex, "Failed to create certificate");
-    return BadRequest(new { error = ex.Message });
-}
-catch (Exception ex)
-{
-    _logger.LogError(ex, "Unexpected error");
-    return StatusCode(500, new { error = "Internal server error" });
-}
-```
-
-### Logging Strategy
-- **Information**: Certificate operations, CA activities
-- **Warning**: Expiring certificates, configuration issues
-- **Error**: Failed operations, security events
-- **Debug**: Detailed operation tracing
-
-## Performance Considerations
-
-### Database Optimization
-- **Indexes**: Serial number, common name, expiry date
-- **Connection Pooling**: Entity Framework Core default
-- **Query Optimization**: Eager loading for related data
-
-### Memory Management
-- **Disposal**: Proper disposal of cryptographic objects
-- **Caching**: Certificate validation results
-- **Streaming**: Large file downloads
-
-### Scalability
-- **Horizontal Scaling**: Stateless application design
-- **Database Scaling**: Read replicas for reporting
-- **Load Balancing**: Multiple application instances
-
-## Monitoring and Observability
-
-### Health Checks
-```csharp
-builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection"));
-```
-
-### Metrics
-- Certificate creation rate
-- CA operations
-- Error rates
-- Response times
-
-### Logging
-- Structured logging with Serilog
-- Correlation IDs for request tracing
-- Security event logging
-
-## Future Architecture Considerations
+## 🚀 Future Architecture Considerations
 
 ### Planned Enhancements
-1. **ACME Protocol Support**
-   - RFC 8555 compliance
-   - HTTP-01 and DNS-01 challenges
-   - Automated certificate issuance
+- **ACME Protocol**: RFC 8555 implementation for automated certificate management
+- **Intermediate CAs**: Multi-level certificate authority hierarchy
+- **Certificate Revocation**: CRL and OCSP responder implementation
+- **API Authentication**: JWT token-based API access
+- **Role-Based Access Control**: Advanced authorization with roles and permissions
 
-2. **Certificate Revocation**
-   - Certificate Revocation Lists (CRL)
-   - Online Certificate Status Protocol (OCSP)
-   - Revocation reason codes
-
-3. **Intermediate CAs**
-   - Multi-level CA hierarchy
-   - CA certificate chaining
-   - Cross-certification support
-
-4. **High Availability**
-   - Database clustering
-   - Application load balancing
-   - Geographic distribution
+### Scalability Improvements
+- **Microservices**: Decompose into microservices for better scalability
+- **Event-Driven Architecture**: Event sourcing for certificate lifecycle
+- **Distributed Caching**: Redis-based distributed caching
+- **Message Queues**: Asynchronous processing with message queues
 
 ### Security Enhancements
-1. **Hardware Security Modules (HSM)**
-   - CA key protection
-   - Cryptographic acceleration
-   - Key backup and recovery
+- **Hardware Security Modules**: HSM integration for key management
+- **Multi-Factor Authentication**: MFA support for enhanced security
+- **Certificate Transparency**: CT log integration for certificate monitoring
+- **Advanced Encryption**: Post-quantum cryptography support
 
-2. **Authentication and Authorization**
-   - Role-based access control
-   - Multi-factor authentication
-   - Audit logging
+---
 
-3. **Network Security**
-   - TLS 1.3 enforcement
-   - Certificate pinning
-   - Security headers
+**CertA provides a solid foundation for certificate management with a clean, layered architecture that supports both current requirements and future enhancements. The modular design allows for easy extension and maintenance while maintaining security and performance standards.**
 
-## Integration Points
-
-### External Systems
-- **Web Servers**: Apache, Nginx, IIS
-- **Load Balancers**: HAProxy, F5, AWS ALB
-- **Cloud Platforms**: AWS, Azure, GCP
-- **Monitoring**: Prometheus, Grafana, ELK Stack
-
-### APIs and Protocols
-- **REST API**: Certificate management
-- **ACME Protocol**: Automated certificate issuance
-- **SCEP Protocol**: Simple Certificate Enrollment Protocol
-- **EST Protocol**: Enrollment over Secure Transport
-
-## Compliance and Standards
-
-### X.509 Standards
-- **RFC 5280**: Internet X.509 Public Key Infrastructure
-- **RFC 8555**: Automatic Certificate Management Environment (ACME)
-- **RFC 6960**: X.509 Internet Public Key Infrastructure Online Certificate Status Protocol
-
-### Security Standards
-- **FIPS 140-2**: Cryptographic module validation
-- **Common Criteria**: Security evaluation
-- **SOC 2**: Security, availability, and confidentiality
-
-## Conclusion
-
-CertA provides a solid foundation for certificate management with a clean, layered architecture that supports both current requirements and future enhancements. The modular design allows for easy extension and maintenance while maintaining security and performance standards.
+*Last updated: August 2025*

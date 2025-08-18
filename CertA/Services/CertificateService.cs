@@ -1,5 +1,6 @@
 using CertA.Data;
 using CertA.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -10,13 +11,13 @@ namespace CertA.Services
 {
     public interface ICertificateService
     {
-        Task<List<CertificateEntity>> ListAsync();
-        Task<CertificateEntity?> GetAsync(int id);
-        Task<CertificateEntity> CreateAsync(string commonName, string? sans, CertificateType type);
-        Task<byte[]> GetPrivateKeyPemAsync(int id);
-        Task<byte[]> GetPublicKeyPemAsync(int id);
-        Task<byte[]> GetCertificatePemAsync(int id);
-        Task<byte[]> GetPfxAsync(int id, string password);
+        Task<List<CertificateEntity>> ListAsync(string userId);
+        Task<CertificateEntity?> GetAsync(int id, string userId);
+        Task<CertificateEntity> CreateAsync(string commonName, string? sans, CertificateType type, string userId);
+        Task<byte[]> GetPrivateKeyPemAsync(int id, string userId);
+        Task<byte[]> GetPublicKeyPemAsync(int id, string userId);
+        Task<byte[]> GetCertificatePemAsync(int id, string userId);
+        Task<byte[]> GetPfxAsync(int id, string password, string userId);
     }
 
     public class CertificateService : ICertificateService
@@ -32,19 +33,22 @@ namespace CertA.Services
             _logger = logger;
         }
 
-        public Task<List<CertificateEntity>> ListAsync()
+        public Task<List<CertificateEntity>> ListAsync(string userId)
         {
             return _db.Certificates
+                .Where(c => c.UserId == userId)
                 .OrderByDescending(c => c.Id)
                 .ToListAsync();
         }
 
-        public Task<CertificateEntity?> GetAsync(int id)
+        public Task<CertificateEntity?> GetAsync(int id, string userId)
         {
-            return _db.Certificates.FirstOrDefaultAsync(c => c.Id == id);
+            return _db.Certificates
+                .Where(c => c.Id == id && c.UserId == userId)
+                .FirstOrDefaultAsync();
         }
 
-        public async Task<CertificateEntity> CreateAsync(string commonName, string? sans, CertificateType type)
+        public async Task<CertificateEntity> CreateAsync(string commonName, string? sans, CertificateType type, string userId)
         {
             // Check if we have an active CA
             var ca = await _caService.GetActiveCAAsync();
@@ -89,39 +93,48 @@ namespace CertA.Services
                 Type = type,
                 CertificatePem = certificatePem,
                 PublicKeyPem = publicKeyPem,
-                PrivateKeyPem = privateKeyPem
+                PrivateKeyPem = privateKeyPem,
+                UserId = userId
             };
 
             _db.Certificates.Add(entity);
             await _db.SaveChangesAsync();
-            _logger.LogInformation("Created CA-signed certificate {Serial} for {CN}", serialNumber, commonName);
+            _logger.LogInformation("Created CA-signed certificate {Serial} for {CN} by user {UserId}", serialNumber, commonName, userId);
             return entity;
         }
 
-        public async Task<byte[]> GetPrivateKeyPemAsync(int id)
+        public async Task<byte[]> GetPrivateKeyPemAsync(int id, string userId)
         {
-            var cert = await _db.Certificates.FirstOrDefaultAsync(c => c.Id == id);
+            var cert = await _db.Certificates
+                .Where(c => c.Id == id && c.UserId == userId)
+                .FirstOrDefaultAsync();
             if (cert?.PrivateKeyPem == null) throw new InvalidOperationException("Certificate or private key not found");
             return Encoding.UTF8.GetBytes(cert.PrivateKeyPem);
         }
 
-        public async Task<byte[]> GetPublicKeyPemAsync(int id)
+        public async Task<byte[]> GetPublicKeyPemAsync(int id, string userId)
         {
-            var cert = await _db.Certificates.FirstOrDefaultAsync(c => c.Id == id);
+            var cert = await _db.Certificates
+                .Where(c => c.Id == id && c.UserId == userId)
+                .FirstOrDefaultAsync();
             if (cert?.PublicKeyPem == null) throw new InvalidOperationException("Certificate or public key not found");
             return Encoding.UTF8.GetBytes(cert.PublicKeyPem);
         }
 
-        public async Task<byte[]> GetCertificatePemAsync(int id)
+        public async Task<byte[]> GetCertificatePemAsync(int id, string userId)
         {
-            var cert = await _db.Certificates.FirstOrDefaultAsync(c => c.Id == id);
+            var cert = await _db.Certificates
+                .Where(c => c.Id == id && c.UserId == userId)
+                .FirstOrDefaultAsync();
             if (cert?.CertificatePem == null) throw new InvalidOperationException("Certificate not found");
             return Encoding.UTF8.GetBytes(cert.CertificatePem);
         }
 
-        public async Task<byte[]> GetPfxAsync(int id, string password)
+        public async Task<byte[]> GetPfxAsync(int id, string password, string userId)
         {
-            var cert = await _db.Certificates.FirstOrDefaultAsync(c => c.Id == id);
+            var cert = await _db.Certificates
+                .Where(c => c.Id == id && c.UserId == userId)
+                .FirstOrDefaultAsync();
             if (cert?.CertificatePem == null || cert?.PrivateKeyPem == null)
                 throw new InvalidOperationException("Certificate or private key not found");
 
@@ -133,12 +146,12 @@ namespace CertA.Services
                 // Export as PKCS#12
                 var pfxBytes = certificate.Export(X509ContentType.Pfx, password);
                 
-                _logger.LogInformation("Generated PFX for certificate {Id}", id);
+                _logger.LogInformation("Generated PFX for certificate {Id} by user {UserId}", id, userId);
                 return pfxBytes;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate PFX for certificate {Id}", id);
+                _logger.LogError(ex, "Failed to generate PFX for certificate {Id} by user {UserId}", id, userId);
                 throw new InvalidOperationException("Failed to generate PFX file");
             }
         }

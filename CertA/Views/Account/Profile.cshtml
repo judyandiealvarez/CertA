@@ -1,0 +1,168 @@
+@model CertA.Controllers.ProfileViewModel
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-person-circle"></i> User Profile
+                </h4>
+            </div>
+            <div class="card-body">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <form asp-action="Profile" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="FirstName" class="form-label"></label>
+                                <input asp-for="FirstName" class="form-control" placeholder="Enter your first name" />
+                                <span asp-validation-for="FirstName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="LastName" class="form-label"></label>
+                                <input asp-for="LastName" class="form-control" placeholder="Enter your last name" />
+                                <span asp-validation-for="LastName" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" readonly />
+                        <div class="form-text">Email address cannot be changed.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="Organization" class="form-label"></label>
+                        <input asp-for="Organization" class="form-control" placeholder="Enter your organization" />
+                        <span asp-validation-for="Organization" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="CreatedDate" class="form-label"></label>
+                                <input asp-for="CreatedDate" class="form-control" readonly />
+                                <div class="form-text">Account creation date.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="IsActive" class="form-label"></label>
+                                <div class="form-control-plaintext">
+                                    @if (Model.IsActive)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-circle"></i> Inactive
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Update Profile
+                        </button>
+                    </div>
+                </form>
+                
+                <hr />
+                
+                <h5><i class="bi bi-key"></i> Change Password</h5>
+                <form asp-action="ChangePassword" method="post">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="CurrentPassword" class="form-label">Current Password</label>
+                                <input type="password" class="form-control" id="CurrentPassword" name="CurrentPassword" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="NewPassword" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="NewPassword" name="NewPassword" required />
+                                <div class="form-text">Minimum 6 characters with uppercase, lowercase, and numeric.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="ConfirmPassword" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="ConfirmPassword" name="ConfirmPassword" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-key"></i> Change Password
+                        </button>
+                    </div>
+                </form>
+                
+                <hr />
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">
+                                    <i class="bi bi-file-earmark-certificate"></i> My Certificates
+                                </h6>
+                                <p class="card-text">Manage your certificates</p>
+                                <a href="/Certificates" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-arrow-right"></i> View Certificates
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">
+                                    <i class="bi bi-shield-lock"></i> Certificate Authority
+                                </h6>
+                                <p class="card-text">View CA information</p>
+                                <a href="/Certificates/Authority" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-arrow-right"></i> View CA
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

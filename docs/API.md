@@ -1,329 +1,488 @@
 # CertA API Documentation
 
-## Overview
+Complete REST API reference for the CertA Certification Authority system.
 
-The CertA API provides RESTful endpoints for managing certificates and the certificate authority. All endpoints return JSON responses and use standard HTTP status codes.
+## 🔐 Authentication
 
-## Base URL
+All API endpoints require authentication unless otherwise specified. The system uses cookie-based authentication with ASP.NET Core Identity.
 
+### Authentication Endpoints
+
+#### User Registration
+```http
+POST /Account/Register
+Content-Type: application/x-www-form-urlencoded
 ```
-http://localhost:8080
-```
-
-## Authentication
-
-Currently, the API does not require authentication. For production use, implement proper authentication and authorization.
-
-## Response Format
-
-All API responses follow this format:
-
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Operation completed successfully"
-}
-```
-
-## Error Responses
-
-```json
-{
-  "success": false,
-  "error": "Error message",
-  "details": "Additional error details"
-}
-```
-
-## HTTP Status Codes
-
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request
-- `404` - Not Found
-- `500` - Internal Server Error
-
----
-
-## Certificate Management
-
-### List Certificates
-
-**GET** `/Certificates`
-
-Returns a list of all certificates.
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "commonName": "example.com",
-      "subjectAlternativeNames": "www.example.com,api.example.com",
-      "serialNumber": "1EEAA3E178CCC9CCEA312D1CA801BD8DE4315A62",
-      "issuedDate": "2025-08-18T13:59:52Z",
-      "expiryDate": "2026-08-18T13:59:52Z",
-      "status": "Issued",
-      "type": "Server"
-    }
-  ]
-}
-```
-
-### Get Certificate Details
-
-**GET** `/Certificates/{id}`
-
-Returns detailed information about a specific certificate.
-
-**Parameters:**
-- `id` (integer) - Certificate ID
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "commonName": "example.com",
-    "subjectAlternativeNames": "www.example.com,api.example.com",
-    "serialNumber": "1EEAA3E178CCC9CCEA312D1CA801BD8DE4315A62",
-    "issuedDate": "2025-08-18T13:59:52Z",
-    "expiryDate": "2026-08-18T13:59:52Z",
-    "status": "Issued",
-    "type": "Server",
-    "certificatePem": "-----BEGIN CERTIFICATE-----\n...",
-    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\n...",
-    "privateKeyPem": "-----BEGIN RSA PRIVATE KEY-----\n..."
-  }
-}
-```
-
-### Create Certificate
-
-**POST** `/Certificates/Create`
-
-Creates a new certificate signed by the CA.
 
 **Request Body:**
 ```json
 {
-  "commonName": "example.com",
-  "subjectAlternativeNames": "www.example.com,api.example.com",
-  "type": "Server"
+  "FirstName": "John",
+  "LastName": "Doe",
+  "Email": "john.doe@example.com",
+  "Organization": "Example Corp",
+  "Password": "SecurePass123!",
+  "ConfirmPassword": "SecurePass123!"
 }
 ```
-
-**Parameters:**
-- `commonName` (string, required) - Primary domain name
-- `subjectAlternativeNames` (string, optional) - Comma-separated list of additional domains
-- `type` (enum, required) - Certificate type: `Server`, `Client`
 
 **Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": 2,
-    "commonName": "example.com",
-    "status": "Issued"
-  },
-  "message": "Certificate created successfully"
-}
+- `302 Found` - Redirects to dashboard on success
+- `200 OK` - Returns registration form with validation errors
+
+#### User Login
+```http
+POST /Account/Login
+Content-Type: application/x-www-form-urlencoded
 ```
 
-### Download Certificate (PEM)
-
-**GET** `/Certificates/DownloadCertificate/{id}`
-
-Downloads the certificate in PEM format.
-
-**Parameters:**
-- `id` (integer) - Certificate ID
-
-**Response:** Binary file download
-
-### Download Private Key (PEM)
-
-**GET** `/Certificates/DownloadPrivateKey/{id}`
-
-Downloads the private key in PEM format.
-
-**Parameters:**
-- `id` (integer) - Certificate ID
-
-**Response:** Binary file download
-
-### Download Public Key (PEM)
-
-**GET** `/Certificates/DownloadPublicKey/{id}`
-
-Downloads the public key in PEM format.
-
-**Parameters:**
-- `id` (integer) - Certificate ID
-
-**Response:** Binary file download
-
-### Download Certificate (PFX)
-
-**GET** `/Certificates/DownloadPfx/{id}`
-
-Downloads the certificate and private key in PKCS#12 format.
-
-**Parameters:**
-- `id` (integer) - Certificate ID
-- `password` (string, optional) - PFX password (default: "password")
-
-**Response:** Binary file download
-
----
-
-## Certificate Authority Management
-
-### Get CA Information
-
-**GET** `/Certificates/Authority`
-
-Returns information about the root CA.
+**Request Body:**
+```json
+{
+  "Email": "john.doe@example.com",
+  "Password": "SecurePass123!",
+  "RememberMe": true
+}
+```
 
 **Response:**
+- `302 Found` - Redirects to dashboard on success
+- `200 OK` - Returns login form with validation errors
+
+#### User Logout
+```http
+POST /Account/Logout
+```
+
+**Response:**
+- `302 Found` - Redirects to home page
+
+#### User Profile
+```http
+GET /Account/Profile
+```
+
+**Response:**
+- `200 OK` - Returns user profile page
+- `302 Found` - Redirects to login if not authenticated
+
+#### Update Profile
+```http
+POST /Account/Profile
+Content-Type: application/x-www-form-urlencoded
+```
+
+**Request Body:**
 ```json
 {
-  "success": true,
-  "data": {
-    "id": 1,
-    "name": "CertA Root CA",
-    "commonName": "CertA Root CA",
-    "organization": "CertA Organization",
-    "country": "US",
-    "state": "California",
-    "locality": "San Francisco",
-    "createdDate": "2025-08-18T13:59:52Z",
-    "expiryDate": "2035-08-18T13:59:52Z",
-    "isActive": true,
-    "certificatePem": "-----BEGIN CERTIFICATE-----\n..."
-  }
+  "FirstName": "John",
+  "LastName": "Smith",
+  "Email": "john.doe@example.com",
+  "Organization": "Updated Corp"
 }
 ```
 
-### Download Root CA Certificate (PEM)
+**Response:**
+- `302 Found` - Redirects to profile page with success message
+- `200 OK` - Returns profile form with validation errors
 
-**GET** `/Certificates/DownloadRootCA`
+#### Change Password
+```http
+POST /Account/ChangePassword
+Content-Type: application/x-www-form-urlencoded
+```
 
-Downloads the root CA certificate in PEM format.
+**Request Body:**
+```json
+{
+  "CurrentPassword": "OldPass123!",
+  "NewPassword": "NewPass456!",
+  "ConfirmPassword": "NewPass456!"
+}
+```
 
-**Response:** Binary file download
+**Response:**
+- `302 Found` - Redirects to profile page with success/error message
+
+## 📜 Certificate Management
+
+### List User Certificates
+```http
+GET /Certificates
+```
+
+**Authentication:** Required
+
+**Response:**
+- `200 OK` - Returns list of user's certificates
+- `302 Found` - Redirects to login if not authenticated
+
+**Example Response:**
+```html
+<!-- Returns HTML page with certificate list -->
+```
+
+### Create New Certificate
+```http
+GET /Certificates/Create
+```
+
+**Authentication:** Required
+
+**Response:**
+- `200 OK` - Returns certificate creation form
+
+```http
+POST /Certificates/Create
+Content-Type: application/x-www-form-urlencoded
+```
+
+**Request Body:**
+```json
+{
+  "CommonName": "example.com",
+  "SubjectAlternativeNames": "www.example.com,api.example.com",
+  "Type": "Server"
+}
+```
+
+**Response:**
+- `302 Found` - Redirects to certificate details on success
+- `200 OK` - Returns form with validation errors
+
+### View Certificate Details
+```http
+GET /Certificates/Details/{id}
+```
+
+**Authentication:** Required
+
+**Parameters:**
+- `id` (int) - Certificate ID
+
+**Response:**
+- `200 OK` - Returns certificate details page
+- `404 Not Found` - Certificate not found or not owned by user
+
+### Download Certificate Files
+
+#### Certificate (PEM)
+```http
+GET /Certificates/DownloadCertificate/{id}
+```
+
+**Authentication:** Required
+
+**Response:**
+- `200 OK` - Returns certificate in PEM format
+- `404 Not Found` - Certificate not found
+
+**Headers:**
+```
+Content-Type: application/x-pem-file
+Content-Disposition: attachment; filename="example.com_certificate.pem"
+```
+
+#### Private Key (PEM)
+```http
+GET /Certificates/DownloadPrivateKey/{id}
+```
+
+**Authentication:** Required
+
+**Response:**
+- `200 OK` - Returns private key in PEM format
+- `404 Not Found` - Certificate not found
+
+**Headers:**
+```
+Content-Type: application/x-pem-file
+Content-Disposition: attachment; filename="example.com_private_key.pem"
+```
+
+#### Public Key (PEM)
+```http
+GET /Certificates/DownloadPublicKey/{id}
+```
+
+**Authentication:** Required
+
+**Response:**
+- `200 OK` - Returns public key in PEM format
+- `404 Not Found` - Certificate not found
+
+**Headers:**
+```
+Content-Type: application/x-pem-file
+Content-Disposition: attachment; filename="example.com_public_key.pem"
+```
+
+#### Certificate (PFX/PKCS#12)
+```http
+GET /Certificates/DownloadPfx/{id}?password={password}
+```
+
+**Authentication:** Required
+
+**Parameters:**
+- `id` (int) - Certificate ID
+- `password` (string) - PFX password (default: "password")
+
+**Response:**
+- `200 OK` - Returns certificate in PKCS#12 format
+- `404 Not Found` - Certificate not found
+
+**Headers:**
+```
+Content-Type: application/x-pkcs12
+Content-Disposition: attachment; filename="example.com.pfx"
+```
+
+## 🏛️ Certificate Authority Management
+
+### View CA Information
+```http
+GET /Certificates/Authority
+```
+
+**Authentication:** Not required (public access)
+
+**Response:**
+- `200 OK` - Returns CA information page
+- `404 Not Found` - No CA found
+
+### Download Root CA Certificate
+```http
+GET /Certificates/DownloadRootCA
+```
+
+**Authentication:** Not required (public access)
+
+**Response:**
+- `200 OK` - Returns root CA certificate in PEM format
+- `404 Not Found` - No CA found
+
+**Headers:**
+```
+Content-Type: application/x-pem-file
+Content-Disposition: attachment; filename="CertA_Root_CA.pem"
+```
 
 ### Download Root CA Certificate (PFX)
+```http
+GET /Certificates/DownloadRootCAPfx?password={password}
+```
 
-**GET** `/Certificates/DownloadRootCAPfx`
-
-Downloads the root CA certificate and private key in PKCS#12 format.
+**Authentication:** Not required (public access)
 
 **Parameters:**
-- `password` (string, optional) - PFX password (default: "password")
+- `password` (string) - PFX password (default: "password")
 
-**Response:** Binary file download
+**Response:**
+- `200 OK` - Returns root CA certificate in PKCS#12 format
+- `404 Not Found` - No CA found
 
----
+**Headers:**
+```
+Content-Type: application/x-pkcs12
+Content-Disposition: attachment; filename="CertA_Root_CA.pfx"
+```
 
-## Certificate Types
+## 📊 Data Models
 
-### Server Certificate
-- **Purpose**: Web servers, load balancers, API endpoints
-- **Key Usage**: Digital Signature, Key Encipherment
-- **Extended Key Usage**: Server Authentication
-- **Validity**: 1 year
+### Certificate Types
+```csharp
+public enum CertificateType
+{
+    Server = 0,        // Web server certificates
+    Client = 1,        // Client authentication
+    CodeSigning = 2,   // Code signing certificates
+    Email = 3          // Email encryption/signing
+}
+```
 
-### Client Certificate
-- **Purpose**: Client authentication, VPN connections
-- **Key Usage**: Digital Signature, Key Encipherment
-- **Extended Key Usage**: Client Authentication
-- **Validity**: 1 year
+### Certificate Status
+```csharp
+public enum CertificateStatus
+{
+    Pending = 0,   // Certificate creation in progress
+    Issued = 1,    // Certificate is valid and issued
+    Revoked = 2,   // Certificate has been revoked
+    Expired = 3    // Certificate has expired
+}
+```
 
----
+### User Model
+```csharp
+public class ApplicationUser
+{
+    public string Id { get; set; }
+    public string UserName { get; set; }
+    public string Email { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? Organization { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public bool IsActive { get; set; }
+}
+```
 
-## Certificate Status
+### Certificate Model
+```csharp
+public class CertificateEntity
+{
+    public int Id { get; set; }
+    public string CommonName { get; set; }
+    public string? SubjectAlternativeNames { get; set; }
+    public string SerialNumber { get; set; }
+    public DateTime IssuedDate { get; set; }
+    public DateTime ExpiryDate { get; set; }
+    public CertificateStatus Status { get; set; }
+    public CertificateType Type { get; set; }
+    public string CertificatePem { get; set; }
+    public string PublicKeyPem { get; set; }
+    public string PrivateKeyPem { get; set; }
+    public string UserId { get; set; }
+    public ApplicationUser? User { get; set; }
+}
+```
 
-- **Issued**: Certificate is valid and active
-- **Expired**: Certificate has passed its expiry date
-- **Revoked**: Certificate has been revoked (future feature)
+## 🔒 Security
 
----
+### Authentication Requirements
+- **User Registration**: Email must be unique
+- **Password Requirements**: Minimum 6 characters with uppercase, lowercase, and numeric
+- **Session Management**: 12-hour sessions with sliding expiration
+- **User Isolation**: Users can only access their own certificates
 
-## Error Codes
+### Authorization
+- **Certificate Access**: Users can only view/download their own certificates
+- **CA Access**: Public access to CA information (no authentication required)
+- **Profile Access**: Users can only access their own profile
+
+### Data Protection
+- **Private Keys**: Stored encrypted in database
+- **Password Hashing**: ASP.NET Core Identity password hashing
+- **Session Security**: Secure cookie configuration
+- **CSRF Protection**: Anti-forgery token validation
+
+## 📝 HTTP Status Codes
 
 | Code | Description |
 |------|-------------|
-| `CERT_NOT_FOUND` | Certificate with specified ID not found |
-| `CA_NOT_FOUND` | No active certificate authority found |
-| `INVALID_REQUEST` | Request parameters are invalid |
-| `CERT_CREATION_FAILED` | Failed to create certificate |
-| `DOWNLOAD_FAILED` | Failed to generate download file |
+| 200 | OK - Request successful |
+| 302 | Found - Redirect (authentication, success) |
+| 400 | Bad Request - Validation errors |
+| 401 | Unauthorized - Authentication required |
+| 403 | Forbidden - Access denied |
+| 404 | Not Found - Resource not found |
+| 500 | Internal Server Error - Server error |
 
----
-
-## Rate Limiting
-
-Currently, no rate limiting is implemented. For production use, implement appropriate rate limiting to prevent abuse.
-
-## Security Considerations
-
-1. **HTTPS**: Always use HTTPS in production
-2. **Authentication**: Implement proper authentication
-3. **Authorization**: Restrict access based on user roles
-4. **Input Validation**: Validate all input parameters
-5. **Logging**: Log all certificate operations for audit
-
----
-
-## Examples
+## 🛠️ Examples
 
 ### cURL Examples
 
-**Create a certificate:**
+#### Register New User
+```bash
+curl -X POST http://localhost:8080/Account/Register \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "FirstName=John&LastName=Doe&Email=john@example.com&Organization=Example&Password=Pass123!&ConfirmPassword=Pass123!"
+```
+
+#### Login
+```bash
+curl -X POST http://localhost:8080/Account/Login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "Email=john@example.com&Password=Pass123!" \
+  -c cookies.txt
+```
+
+#### Create Certificate (with authentication)
 ```bash
 curl -X POST http://localhost:8080/Certificates/Create \
-  -H "Content-Type: application/json" \
-  -d '{
-    "commonName": "api.example.com",
-    "subjectAlternativeNames": "api.example.com,api2.example.com",
-    "type": "Server"
-  }'
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -b cookies.txt \
+  -d "CommonName=example.com&SubjectAlternativeNames=www.example.com&Type=Server"
 ```
 
-**Download certificate:**
+#### Download Certificate
 ```bash
-curl -O http://localhost:8080/Certificates/DownloadCertificate/1
+curl -X GET http://localhost:8080/Certificates/DownloadCertificate/1 \
+  -b cookies.txt \
+  -o certificate.pem
 ```
 
-**Download root CA:**
+#### Download Root CA (no authentication required)
 ```bash
-curl -O http://localhost:8080/Certificates/DownloadRootCA
+curl -X GET http://localhost:8080/Certificates/DownloadRootCA \
+  -o root_ca.pem
 ```
 
 ### PowerShell Examples
 
-**Create a certificate:**
+#### Register New User
 ```powershell
 $body = @{
-    commonName = "example.com"
-    subjectAlternativeNames = "www.example.com,api.example.com"
-    type = "Server"
-} | ConvertTo-Json
+    FirstName = "John"
+    LastName = "Doe"
+    Email = "john@example.com"
+    Organization = "Example"
+    Password = "Pass123!"
+    ConfirmPassword = "Pass123!"
+}
 
-Invoke-RestMethod -Uri "http://localhost:8080/Certificates/Create" `
-  -Method POST `
-  -Body $body `
-  -ContentType "application/json"
+Invoke-RestMethod -Uri "http://localhost:8080/Account/Register" -Method POST -Body $body -ContentType "application/x-www-form-urlencoded"
 ```
 
-**Download certificate:**
+#### Login and Create Certificate
 ```powershell
-Invoke-WebRequest -Uri "http://localhost:8080/Certificates/DownloadCertificate/1" `
-  -OutFile "certificate.pem"
+# Login
+$loginBody = @{
+    Email = "john@example.com"
+    Password = "Pass123!"
+}
+
+$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$response = Invoke-RestMethod -Uri "http://localhost:8080/Account/Login" -Method POST -Body $loginBody -ContentType "application/x-www-form-urlencoded" -WebSession $session
+
+# Create certificate
+$certBody = @{
+    CommonName = "example.com"
+    SubjectAlternativeNames = "www.example.com"
+    Type = "Server"
+}
+
+Invoke-RestMethod -Uri "http://localhost:8080/Certificates/Create" -Method POST -Body $certBody -ContentType "application/x-www-form-urlencoded" -WebSession $session
 ```
+
+## 🔍 Error Handling
+
+### Validation Errors
+When form validation fails, the response includes error messages:
+
+```html
+<div class="text-danger field-validation-error" data-valmsg-for="Email">
+    The Email field is required.
+</div>
+```
+
+### Authentication Errors
+- **Invalid credentials**: "Invalid login attempt."
+- **Account not found**: Redirects to login page
+- **Access denied**: Redirects to login page
+
+### Certificate Errors
+- **Certificate not found**: 404 Not Found
+- **Access denied**: 302 Found (redirect to login)
+- **Invalid parameters**: 400 Bad Request
+
+## 📚 Related Documentation
+
+- **[User Guide](USER_GUIDE.md)** - End-user documentation
+- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment
+- **[Architecture Guide](ARCHITECTURE.md)** - Technical architecture
+- **[Documentation Index](INDEX.md)** - Complete documentation overview
+
+---
+
+*Last updated: August 2025*

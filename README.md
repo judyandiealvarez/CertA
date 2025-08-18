@@ -1,56 +1,40 @@
 # CertA - Certification Authority
 
-A complete, self-hosted Certification Authority (CA) built with ASP.NET Core that allows you to create and manage your own trusted certificates for internal infrastructure.
+A comprehensive Certification Authority (CA) system with web-based certificate management, built with ASP.NET Core and PostgreSQL.
 
-## 🚀 Features
+## 🌟 Features
 
-### Core CA Functionality
-- **Root CA Management**: Create and manage your own Certificate Authority
-- **CA-Signed Certificates**: Issue certificates signed by your root CA (not self-signed)
-- **Trust Chain**: Install root CA to make all issued certificates trusted
-- **Multiple Certificate Types**: Support for Server, Client, and other certificate types
-- **Subject Alternative Names (SAN)**: Support for multiple domain names per certificate
+### 🔐 Authentication & Authorization
+- **User Registration & Login** - Secure user account management
+- **User Isolation** - Each user can only see and manage their own certificates
+- **Profile Management** - Users can update their information and change passwords
+- **Session Management** - Configurable cookie-based authentication with 12-hour sessions
 
-### Certificate Management
-- **Web UI**: Complete web interface for certificate management
-- **Multiple Download Formats**: 
-  - Certificate (PEM)
-  - Private Key (PEM)
-  - Public Key (PEM)
-  - PKCS#12/PFX (with password protection)
-- **Certificate Details**: View full certificate information and validity
-- **Certificate Lifecycle**: Create, view, download, and manage certificates
+### 🏛️ Certificate Authority
+- **Root CA Management** - Self-signed root certificate authority
+- **Certificate Issuance** - CA-signed certificates with proper X.509 extensions
+- **Certificate Types** - Server, Client, Code Signing, and Email certificates
+- **Subject Alternative Names (SAN)** - Support for multiple domain names and IP addresses
 
-### Security & Compliance
-- **Proper CA Hierarchy**: Root CA → Issued Certificates
-- **Strong Cryptography**: RSA 2048-bit keys for certificates, 4096-bit for CA
-- **X.509 Standards**: Full compliance with X.509 certificate standards
-- **Database Storage**: Secure storage of certificates and keys in PostgreSQL
+### 📜 Certificate Management
+- **Web-based Interface** - User-friendly certificate creation and management
+- **Multiple Formats** - Download certificates in PEM, PFX/PKCS#12 formats
+- **Key Management** - Separate downloads for public and private keys
+- **Certificate Details** - Comprehensive certificate information display
 
-## 🏗️ Architecture
+### 🔧 Technical Features
+- **ACME Protocol Support** - Automated certificate management (planned)
+- **Database Storage** - PostgreSQL with Entity Framework Core
+- **Docker Support** - Complete containerization with Docker Compose
+- **Cross-platform** - Works on Windows, macOS, and Linux
 
-```
-CertA Certification Authority
-├── Root CA Certificate (4096-bit RSA)
-│   ├── Self-signed with proper CA extensions
-│   ├── 10-year validity period
-│   └── Downloadable in PEM/PFX formats
-└── Issued Certificates (2048-bit RSA)
-    ├── Signed by Root CA
-    ├── 1-year validity period
-    ├── Support for SAN extensions
-    └── Multiple download formats
-```
+## 🚀 Quick Start
 
-## 📋 Prerequisites
-
+### Prerequisites
 - Docker and Docker Compose
 - Modern web browser
-- PostgreSQL (included in Docker setup)
 
-## 🛠️ Installation
-
-### Quick Start with Docker
+### Installation
 
 1. **Clone the repository**
    ```bash
@@ -63,198 +47,234 @@ CertA Certification Authority
    docker-compose up -d
    ```
 
-3. **Access the web interface**
-   ```
-   http://localhost:8080
-   ```
+3. **Access the application**
+   - Open your browser to `http://localhost:8080`
+   - You'll be redirected to the login page
 
-### Manual Installation
+4. **Default Admin Account**
+   - **Email**: `admin@certa.local`
+   - **Password**: `Admin123!`
 
-1. **Install .NET 9.0 SDK**
-2. **Install PostgreSQL**
-3. **Configure connection string** in `appsettings.json`
-4. **Run the application**
-   ```bash
-   dotnet run
-   ```
+## 👤 User Management
 
-## 🎯 Getting Started
+### Registration
+1. Click "Register" in the navigation bar
+2. Fill in your details (First Name, Last Name, Email, Organization)
+3. Create a secure password (minimum 6 characters with uppercase, lowercase, and numeric)
+4. Click "Create Account"
 
-### 1. Install Root CA Certificate
+### Login
+1. Enter your email and password
+2. Optionally check "Remember me" for persistent sessions
+3. Click "Login"
 
-1. Navigate to **Certificate Authority** in the web interface
-2. Download the **Root CA Certificate (PEM)**
-3. Install it as a trusted authority in your system:
+### Profile Management
+1. Click on your username in the navigation bar
+2. Select "Profile" from the dropdown
+3. Update your personal information
+4. Change your password if needed
+5. Click "Update Profile" or "Change Password"
 
-   **macOS:**
-   ```bash
-   # Double-click the .pem file
-   # Add to System keychain
-   # Set trust to "Always Trust"
-   ```
+## 📋 Certificate Operations
 
-   **Windows:**
-   ```bash
-   # Right-click and "Install Certificate"
-   # Choose "Local Machine"
-   # Select "Trusted Root Certification Authorities"
-   ```
+### Creating Certificates
+1. **Login** to your account
+2. **Navigate** to "My Certificates"
+3. **Click** "New Certificate"
+4. **Fill in** the certificate details:
+   - Common Name (e.g., `example.com`)
+   - Subject Alternative Names (optional, comma-separated)
+   - Certificate Type (Server, Client, Code Signing, Email)
+5. **Click** "Create Certificate"
 
-   **Linux:**
-   ```bash
-   sudo cp CertA_Root_CA.pem /usr/local/share/ca-certificates/
-   sudo update-ca-certificates
-   ```
+### Downloading Certificates
+1. **View** your certificate details
+2. **Download** in your preferred format:
+   - **Certificate (PEM)** - Public certificate only
+   - **Private Key (PEM)** - Private key only
+   - **Public Key (PEM)** - Public key only
+   - **PFX/PKCS#12** - Certificate with private key (password protected)
 
-### 2. Create Your First Certificate
+### Certificate Authority
+- **Public Access** - Anyone can view CA information without login
+- **Root CA Download** - Download the root CA certificate for trust establishment
+- **Installation Instructions** - Platform-specific guides for CA installation
 
-1. Click **"Create New Certificate"** in the web interface
-2. Fill in the certificate details:
-   - **Common Name**: Your domain (e.g., `example.com`)
-   - **Subject Alternative Names**: Additional domains (e.g., `www.example.com, api.example.com`)
-   - **Certificate Type**: Server (for web servers)
-3. Click **"Create Certificate"**
+## 🏗️ Architecture
 
-### 3. Download and Install Certificate
+### System Components
+- **Web Interface** - ASP.NET Core MVC application
+- **Database** - PostgreSQL with Entity Framework Core
+- **Authentication** - ASP.NET Core Identity
+- **Certificate Services** - Custom services for CA and certificate management
+- **Containerization** - Docker and Docker Compose
 
-1. View the certificate details
-2. Download the certificate files:
-   - **Certificate (PEM)**: For web servers
-   - **Private Key (PEM)**: Keep secure
-   - **PFX/PKCS#12**: For Windows servers
-3. Install on your web server
+### Security Model
+- **User Isolation** - Complete separation of user data
+- **Authentication Required** - All sensitive operations require login
+- **Password Security** - Enforced password requirements
+- **Session Management** - Secure cookie-based sessions
+- **Data Protection** - Encrypted data storage
 
 ## 🔧 Configuration
 
 ### Environment Variables
-
 ```bash
 # Database
-POSTGRES_DB=certa
-POSTGRES_USER=certa
-POSTGRES_PASSWORD=your_secure_password
+ConnectionStrings__DefaultConnection=Host=postgres;Database=certa;Username=certa;Password=certa123;Port=5432
 
 # Application
-ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_ENVIRONMENT=Development
 ```
 
-### Custom CA Settings
+### Docker Configuration
+- **PostgreSQL**: Port 5433 (host) → 5432 (container)
+- **Web Application**: Port 8080 (host) → 8080 (container)
+- **Volumes**: Persistent data storage for database and logs
 
-Edit `CertificateService.cs` to customize:
-- CA organization details
-- Certificate validity periods
-- Key sizes
-- Certificate extensions
+## 📚 Documentation
 
-## 📁 Project Structure
-
-```
-CertA/
-├── Controllers/           # Web API controllers
-│   ├── CertificatesController.cs
-│   └── HomeController.cs
-├── Models/               # Data models
-│   ├── CertificateEntity.cs
-│   ├── CertificateAuthority.cs
-│   └── ErrorViewModel.cs
-├── Services/             # Business logic
-│   ├── CertificateService.cs
-│   └── CertificateAuthorityService.cs
-├── Views/                # Web UI views
-│   ├── Certificates/
-│   ├── Home/
-│   └── Shared/
-├── Data/                 # Database context
-│   └── AppDbContext.cs
-└── wwwroot/             # Static assets
-```
+- **[API Documentation](docs/API.md)** - Complete REST API reference
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment instructions
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Technical architecture details
+- **[User Guide](docs/USER_GUIDE.md)** - End-user documentation
+- **[Documentation Index](docs/INDEX.md)** - Complete documentation overview
 
 ## 🔒 Security Considerations
 
+### Authentication
+- **Password Requirements**: Minimum 6 characters with complexity
+- **Session Security**: Configurable session timeouts
+- **Account Lockout**: Protection against brute force attacks
+- **Secure Cookies**: HTTP-only, secure cookie configuration
+
 ### Certificate Security
-- **Private Keys**: Never share private keys
-- **Root CA**: Keep root CA private key secure
-- **Access Control**: Restrict access to the web interface
-- **Network Security**: Use HTTPS in production
+- **Private Key Protection**: Secure storage and download
+- **CA Security**: Root CA private key protection
+- **Certificate Validation**: Proper X.509 extension validation
+- **User Isolation**: Complete data separation between users
+
+### Data Protection
+- **Database Security**: Encrypted connections and access control
+- **File System Security**: Secure storage of certificates and keys
+- **Network Security**: HTTPS enforcement in production
+
+## 🛠️ Development
+
+### Prerequisites
+- .NET 9.0 SDK
+- PostgreSQL
+- Docker (optional)
+
+### Local Development
+1. **Clone** the repository
+2. **Configure** database connection
+3. **Run** `dotnet restore` and `dotnet build`
+4. **Apply** database migrations: `dotnet ef database update`
+5. **Start** the application: `dotnet run`
+
+### Database Migrations
+```bash
+# Create new migration
+dotnet ef migrations add MigrationName
+
+# Apply migrations
+dotnet ef database update
+
+# Remove last migration
+dotnet ef migrations remove
+```
+
+## 🐳 Docker Deployment
 
 ### Production Deployment
-- **HTTPS**: Configure SSL/TLS for the web interface
-- **Authentication**: Add user authentication
-- **Backup**: Regular database backups
-- **Monitoring**: Monitor certificate expiration
-
-## 🚀 API Endpoints
-
-### Certificate Management
-- `GET /Certificates` - List all certificates
-- `GET /Certificates/Create` - Certificate creation form
-- `POST /Certificates/Create` - Create new certificate
-- `GET /Certificates/{id}` - View certificate details
-- `GET /Certificates/DownloadCertificate/{id}` - Download certificate (PEM)
-- `GET /Certificates/DownloadPrivateKey/{id}` - Download private key (PEM)
-- `GET /Certificates/DownloadPublicKey/{id}` - Download public key (PEM)
-- `GET /Certificates/DownloadPfx/{id}` - Download certificate (PFX)
-
-### CA Management
-- `GET /Certificates/Authority` - View CA information
-- `GET /Certificates/DownloadRootCA` - Download root CA (PEM)
-- `GET /Certificates/DownloadRootCAPfx` - Download root CA (PFX)
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Certificate not trusted:**
-- Ensure root CA is installed as trusted authority
-- Check certificate chain in browser developer tools
-
-**PFX import fails:**
-- Verify password is correct (default: `password`)
-- Check if certificate is properly formatted
-
-**Database connection issues:**
-- Verify PostgreSQL is running
-- Check connection string in `appsettings.json`
-
-### Logs
 ```bash
-# View application logs
-docker-compose logs certa-app
+# Build and start
+docker-compose -f docker-compose.prod.yml up -d
 
-# View database logs
-docker-compose logs certa-postgres
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
 ```
+
+### Environment Configuration
+```bash
+# Copy environment file
+cp .env.example .env
+
+# Edit configuration
+nano .env
+
+# Start with environment
+docker-compose --env-file .env up -d
+```
+
+## 📊 Monitoring & Logging
+
+### Application Logs
+- **Serilog Integration** - Structured logging
+- **File Logging** - Persistent log storage
+- **Console Logging** - Development debugging
+- **Log Levels** - Configurable verbosity
+
+### Health Checks
+- **Database Connectivity** - PostgreSQL health monitoring
+- **Application Status** - Service availability checks
+- **Certificate Status** - CA and certificate validation
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+1. **Fork** the repository
+2. **Create** a feature branch
+3. **Make** your changes
+4. **Test** thoroughly
+5. **Submit** a pull request
+
+### Development Guidelines
+- **Code Style** - Follow C# coding conventions
+- **Testing** - Include unit and integration tests
+- **Documentation** - Update relevant documentation
+- **Security** - Follow security best practices
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-For issues and questions:
-1. Check the troubleshooting section
-2. Review the logs
-3. Create an issue in the repository
+### Getting Help
+- **Documentation** - Check the [docs](docs/) directory
+- **Issues** - Report bugs and feature requests
+- **Discussions** - Ask questions and share ideas
 
-## 🔄 Roadmap
+### Common Issues
+- **Database Connection** - Check PostgreSQL service and connection string
+- **Authentication** - Verify user credentials and account status
+- **Certificate Issues** - Check CA installation and trust settings
+- **Docker Problems** - Ensure Docker services are running
 
-- [ ] ACME protocol support (Let's Encrypt compatible)
-- [ ] Certificate revocation lists (CRL)
-- [ ] OCSP responder
-- [ ] Intermediate CA support
-- [ ] Certificate templates
-- [ ] API authentication
-- [ ] Certificate monitoring and alerts
-- [ ] Integration with popular web servers
+## 🗺️ Roadmap
+
+### Planned Features
+- **ACME Protocol** - Full RFC 8555 implementation
+- **Certificate Revocation** - CRL and OCSP support
+- **Intermediate CAs** - Multi-level CA hierarchy
+- **API Authentication** - JWT token-based API access
+- **Certificate Monitoring** - Expiration alerts and renewal
+- **Web Server Integration** - Apache, Nginx, IIS integration
+- **High Availability** - Load balancing and clustering
+- **Advanced Security** - Hardware security modules (HSM) support
+
+### Version History
+- **v1.0.0** - Initial release with basic CA functionality
+- **v1.1.0** - Added user authentication and authorization
+- **v1.2.0** - Profile management and password changes
+- **v1.3.0** - Enhanced security and monitoring (planned)
 
 ---
 
-**CertA** - Your trusted Certification Authority for internal infrastructure.
+**CertA** - Secure Certificate Authority Management Made Simple
+
+*Last updated: August 2025*

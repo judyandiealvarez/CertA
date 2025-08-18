@@ -1,28 +1,42 @@
 using CertA.Data;
 using CertA.Models;
 using CertA.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography.X509Certificates;
 
 namespace CertA.Controllers
 {
+    [Authorize]
     public class CertificatesController : Controller
     {
         private readonly ICertificateService _service;
         private readonly ICertificateAuthorityService _caService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public CertificatesController(ICertificateService service, ICertificateAuthorityService caService)
+        public CertificatesController(
+            ICertificateService service, 
+            ICertificateAuthorityService caService,
+            UserManager<ApplicationUser> userManager)
         {
             _service = service;
             _caService = caService;
+            _userManager = userManager;
         }
 
         public async Task<IActionResult> Index()
         {
             try
             {
-                var certificates = await _service.ListAsync();
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var certificates = await _service.ListAsync(userId);
                 return View(certificates);
             }
             catch (Exception ex)
@@ -35,7 +49,13 @@ namespace CertA.Controllers
         {
             try
             {
-                var cert = await _service.GetAsync(id);
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var cert = await _service.GetAsync(id, userId);
                 if (cert == null) return NotFound();
                 return View(cert);
             }
@@ -51,14 +71,20 @@ namespace CertA.Controllers
         }
 
         [HttpPost]
-        // [ValidateAntiForgeryToken]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateCertificateVm vm)
         {
             if (!ModelState.IsValid) return View(vm);
             
             try
             {
-                var created = await _service.CreateAsync(vm.CommonName, vm.SubjectAlternativeNames, vm.Type);
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var created = await _service.CreateAsync(vm.CommonName, vm.SubjectAlternativeNames, vm.Type, userId);
                 return RedirectToAction(nameof(Details), new { id = created.Id });
             }
             catch (Exception ex)
@@ -72,10 +98,16 @@ namespace CertA.Controllers
         {
             try
             {
-                var cert = await _service.GetAsync(id);
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var cert = await _service.GetAsync(id, userId);
                 if (cert == null) return NotFound();
 
-                var bytes = await _service.GetCertificatePemAsync(id);
+                var bytes = await _service.GetCertificatePemAsync(id, userId);
                 var fileName = $"{cert.CommonName.Replace(" ", "_")}_certificate.pem";
                 return File(bytes, "application/x-pem-file", fileName);
             }
@@ -89,10 +121,16 @@ namespace CertA.Controllers
         {
             try
             {
-                var cert = await _service.GetAsync(id);
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var cert = await _service.GetAsync(id, userId);
                 if (cert == null) return NotFound();
 
-                var bytes = await _service.GetPrivateKeyPemAsync(id);
+                var bytes = await _service.GetPrivateKeyPemAsync(id, userId);
                 var fileName = $"{cert.CommonName.Replace(" ", "_")}_private_key.pem";
                 return File(bytes, "application/x-pem-file", fileName);
             }
@@ -106,10 +144,16 @@ namespace CertA.Controllers
         {
             try
             {
-                var cert = await _service.GetAsync(id);
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var cert = await _service.GetAsync(id, userId);
                 if (cert == null) return NotFound();
 
-                var bytes = await _service.GetPublicKeyPemAsync(id);
+                var bytes = await _service.GetPublicKeyPemAsync(id, userId);
                 var fileName = $"{cert.CommonName.Replace(" ", "_")}_public_key.pem";
                 return File(bytes, "application/x-pem-file", fileName);
             }
@@ -123,10 +167,16 @@ namespace CertA.Controllers
         {
             try
             {
-                var cert = await _service.GetAsync(id);
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var cert = await _service.GetAsync(id, userId);
                 if (cert == null) return NotFound();
 
-                var bytes = await _service.GetPfxAsync(id, password);
+                var bytes = await _service.GetPfxAsync(id, password, userId);
                 var fileName = $"{cert.CommonName.Replace(" ", "_")}.pfx";
                 return File(bytes, "application/x-pkcs12", fileName);
             }
@@ -136,6 +186,7 @@ namespace CertA.Controllers
             }
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> Authority()
         {
             try
@@ -149,6 +200,7 @@ namespace CertA.Controllers
             }
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> DownloadRootCA()
         {
             try
@@ -166,6 +218,7 @@ namespace CertA.Controllers
             }
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> DownloadRootCAPfx(string password = "password")
         {
             try
