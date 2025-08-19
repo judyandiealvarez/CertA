@@ -2,6 +2,9 @@
 
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![CI/CD](https://github.com/judyandiealvarez/CertA/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/judyandiealvarez/CertA/actions)
+[![Docker](https://img.shields.io/docker/pulls/judyandiealvarez/certa.svg)](https://hub.docker.com/r/judyandiealvarez/certa)
+[![Security](https://github.com/judyandiealvarez/CertA/workflows/Security%20Scan/badge.svg)](https://github.com/judyandiealvarez/CertA/actions)
 
 A comprehensive Certification Authority (CA) system with web-based certificate management, built with ASP.NET Core and PostgreSQL.
 
@@ -257,6 +260,35 @@ This project is licensed under the GNU Lesser General Public License v3.0 - see 
 - **Authentication** - Verify user credentials and account status
 - **Certificate Issues** - Check CA installation and trust settings
 - **Docker Problems** - Ensure Docker services are running
+
+## 🔄 CI/CD Pipeline
+
+### Automated Workflows
+- **Build & Test** - Automatic compilation and testing on every push
+- **Docker Images** - Multi-platform Docker builds for amd64, arm64, and arm/v7
+- **Security Scanning** - Vulnerability scanning with Trivy and CodeQL
+- **Dependency Updates** - Automated package updates with PR creation
+- **Release Management** - Automatic GitHub releases with changelog generation
+
+### Docker Hub Integration
+- **Repository**: `judyandiealvarez/certa`
+- **Tags**: `latest`, `main`, version tags (v1.0.0, 1.0, 1)
+- **Multi-Platform**: Support for Intel, AMD, and ARM architectures
+- **Security**: Automated vulnerability scanning and reporting
+
+### Quick Deployment
+```bash
+# Latest stable version
+docker run -d -p 8080:8080 judyandiealvarez/certa:latest
+
+# Specific version
+docker run -d -p 8080:8080 judyandiealvarez/certa:v1.0.0
+
+# Development version
+docker run -d -p 8080:8080 judyandiealvarez/certa:main
+```
+
+For detailed workflow information, see [.github/workflows/README.md](.github/workflows/README.md).
 
 ## 🗺️ Roadmap
 

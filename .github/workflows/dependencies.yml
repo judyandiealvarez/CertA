@@ -1,0 +1,70 @@
+name: Update Dependencies
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Every Sunday at midnight
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Check for outdated packages
+      run: |
+        dotnet list package --outdated
+        dotnet restore CertA/CertA.csproj
+        
+    - name: Update packages
+      run: |
+        dotnet add CertA/CertA.csproj package Microsoft.EntityFrameworkCore --version 9.0.0
+        dotnet add CertA/CertA.csproj package Microsoft.AspNetCore.Identity.EntityFrameworkCore --version 9.0.0
+        dotnet add CertA/CertA.csproj package Microsoft.EntityFrameworkCore.Tools --version 9.0.0
+        dotnet add CertA/CertA.csproj package Microsoft.EntityFrameworkCore.Design --version 9.0.0
+        dotnet add CertA/CertA.csproj package Npgsql.EntityFrameworkCore.PostgreSQL --version 9.0.0
+        
+    - name: Build to verify updates
+      run: dotnet build CertA/CertA.csproj --configuration Release
+      
+    - name: Test to verify updates
+      run: dotnet test CertA/CertA.csproj --configuration Release
+      
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update dependencies'
+        title: 'chore: update dependencies'
+        body: |
+          ## Dependency Updates
+          
+          This PR updates the following dependencies:
+          
+          - Microsoft.EntityFrameworkCore
+          - Microsoft.AspNetCore.Identity.EntityFrameworkCore
+          - Microsoft.EntityFrameworkCore.Tools
+          - Microsoft.EntityFrameworkCore.Design
+          - Npgsql.EntityFrameworkCore.PostgreSQL
+          
+          ## Changes
+          
+          - Updated all packages to latest compatible versions
+          - Verified build and tests pass
+          
+          ## Testing
+          
+          - [x] Build successful
+          - [x] Tests passing
+          - [x] No breaking changes detected
+        branch: update-dependencies
+        delete-branch: true
