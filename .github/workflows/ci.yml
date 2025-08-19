@@ -45,7 +45,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
-        if: github.event_name != 'pull_request' && github.ref != 'refs/heads/main'
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -58,16 +58,16 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
-            type=raw,value=latest,enable=${{ github.ref != 'refs/heads/main' }}
-            type=sha,prefix={{branch}}-sha-,enable=${{ github.ref != 'refs/heads/main' }}
+            type=ref,event=branch
+            type=raw,value=latest
+            type=sha,prefix={{branch}}-sha-
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: CertA/Dockerfile
-          push: ${{ github.event_name != 'pull_request' && github.ref != 'refs/heads/main' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -87,14 +87,16 @@ jobs:
           docker info --format '{{.Swarm.LocalNodeState}}'
           docker node ls
 
-      - name: Build Docker image
+      - name: Pull Docker image
         run: |
-          echo "Building Docker image..."
-          docker build -t ${{ env.IMAGE_NAME }}:main -f CertA/Dockerfile .
+          echo "Pulling Docker image from Docker Hub..."
+          docker pull ${{ env.IMAGE_NAME }}:main
 
       - name: Deploy stack
         run: |
           echo "Deploying stack 'certa'..."
+          
+
           
           # Check if stack already exists
           if docker stack ls | grep -q "certa"; then
