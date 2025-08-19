@@ -14,6 +14,7 @@ env:
 jobs:
   build-multi-platform:
     runs-on: ubuntu-latest
+    if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
     
     steps:
     - name: Checkout code

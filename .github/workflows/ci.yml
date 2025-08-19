@@ -49,7 +49,7 @@ jobs:
   docker-build-and-push:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
     
     steps:
     - name: Checkout code
@@ -89,7 +89,7 @@ jobs:
   release:
     needs: docker-build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: ${{ github.event_name == 'release' && github.event.action == 'published' && secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
     
     steps:
     - name: Checkout code
