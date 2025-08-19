@@ -73,6 +73,116 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  deploy:
+    runs-on: swarm
+    needs: build-docker
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Docker Swarm status
+        run: |
+          echo "Checking Docker Swarm status..."
+          docker info --format '{{.Swarm.LocalNodeState}}'
+          docker node ls
+
+      - name: Build Docker image
+        run: |
+          echo "Building Docker image..."
+          docker build -t ${{ env.IMAGE_NAME }}:main -f CertA/Dockerfile .
+
+      - name: Deploy stack
+        run: |
+          echo "Deploying stack 'certa'..."
+          
+          # Check if stack already exists
+          if docker stack ls | grep -q "certa"; then
+            echo "Updating existing stack..."
+            docker stack deploy -c docker-compose.swarm.yml certa
+          else
+            echo "Creating new stack..."
+            docker stack deploy -c docker-compose.swarm.yml certa
+          fi
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for services to be ready..."
+          sleep 30
+          
+          # Check service status
+          echo "Checking service status..."
+          docker stack services certa
+          
+          # Wait for all services to be running
+          max_attempts=30
+          attempt=1
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Checking service readiness (attempt $attempt/$max_attempts)..."
+            
+            if docker stack services certa --format "table {{.Name}}\t{{.Replicas}}\t{{.Ports}}" | grep -q "0/"; then
+              echo "Some services are not ready yet, waiting..."
+              sleep 10
+              attempt=$((attempt + 1))
+            else
+              echo "All services are running!"
+              break
+            fi
+          done
+          
+          if [ $attempt -gt $max_attempts ]; then
+            echo "Services failed to start within the expected time"
+            docker stack ps certa
+            exit 1
+          fi
+
+      - name: Health check
+        run: |
+          echo "Performing health check..."
+          
+          # Get the node IP where the service is running
+          NODE_IP=$(docker node ls --format "table {{.Hostname}}\t{{.Status}}\t{{.Availability}}" | grep "Ready" | head -1 | awk '{print $1}')
+          
+          if [ -z "$NODE_IP" ]; then
+            NODE_IP="localhost"
+          fi
+          
+          HEALTH_CHECK_URL="http://$NODE_IP:8080"
+          echo "Health check URL: $HEALTH_CHECK_URL"
+          
+          # Try to connect to the application
+          max_attempts=10
+          attempt=1
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Health check attempt $attempt/$max_attempts"
+            
+            if curl -f -s "$HEALTH_CHECK_URL" > /dev/null; then
+              echo "Health check passed! Application is responding."
+              break
+            else
+              echo "Health check failed, retrying in 10 seconds..."
+              sleep 10
+              attempt=$((attempt + 1))
+            fi
+          done
+          
+          # Final health check
+          if ! curl -f -s "$HEALTH_CHECK_URL" > /dev/null; then
+            echo "Health check failed after all attempts"
+            exit 1
+          fi
+
+      - name: Show deployment status
+        run: |
+          echo "Deployment completed successfully!"
+          echo "Stack services:"
+          docker stack services certa
+          echo
+          echo "Service details:"
+          docker stack ps certa
+
   lint:
     runs-on: ubuntu-latest
     steps:
