@@ -50,7 +50,7 @@ namespace CertA.Services
             var issuer = subject; // Self-signed for root CA
 
             var request = new CertificateRequest(subject, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-            
+
             // Add CA extensions
             request.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
             request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.DigitalSignature, true));
@@ -77,7 +77,7 @@ namespace CertA.Services
 
             _db.CertificateAuthorities.Add(ca);
             await _db.SaveChangesAsync();
-            
+
             _logger.LogInformation("Created root CA {Name} with serial {Serial}", name, serialNumber);
             return ca;
         }
@@ -101,7 +101,7 @@ namespace CertA.Services
                 var sanList = sans.Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => s.Trim())
                     .Where(s => !string.IsNullOrEmpty(s));
-                
+
                 foreach (var san in sanList)
                 {
                     if (Uri.IsWellFormedUriString(san, UriKind.Absolute))
@@ -113,17 +113,17 @@ namespace CertA.Services
                         sanBuilder.AddDnsName(san);
                     }
                 }
-                
+
                 request.CertificateExtensions.Add(sanBuilder.Build());
             }
 
             // Add basic constraints for end entity
             request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
-            
+
             // Add key usage
             request.CertificateExtensions.Add(new X509KeyUsageExtension(
                 X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
-            
+
             // Add extended key usage for server authentication
             request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
                 new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, true)); // Server Authentication
@@ -134,7 +134,7 @@ namespace CertA.Services
             var serialNumber = GenerateSerialNumber();
 
             var signedCert = request.Create(caCert, notBefore, notAfter, serialNumber.ToByteArray());
-            
+
             _logger.LogInformation("Signed certificate for {CN} with serial {Serial}", commonName, serialNumber);
             return signedCert;
         }

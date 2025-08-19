@@ -16,7 +16,7 @@ namespace CertA.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            
+
             modelBuilder.Entity<CertificateEntity>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -25,14 +25,14 @@ namespace CertA.Data
                 entity.Property(e => e.CertificatePem).IsRequired();
                 entity.Property(e => e.PublicKeyPem).IsRequired();
                 entity.Property(e => e.PrivateKeyPem).IsRequired();
-                
+
                 // User relationship
                 entity.HasOne(e => e.User)
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
-            
+
             modelBuilder.Entity<CertificateAuthority>(entity =>
             {
                 entity.HasKey(e => e.Id);

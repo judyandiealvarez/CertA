@@ -142,10 +142,10 @@ namespace CertA.Services
             {
                 // Create X509Certificate2 from PEM
                 var certificate = X509Certificate2.CreateFromPem(cert.CertificatePem, cert.PrivateKeyPem);
-                
+
                 // Export as PKCS#12
                 var pfxBytes = certificate.Export(X509ContentType.Pfx, password);
-                
+
                 _logger.LogInformation("Generated PFX for certificate {Id} by user {UserId}", id, userId);
                 return pfxBytes;
             }

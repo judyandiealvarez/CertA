@@ -21,7 +21,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 6;
-    
+
     options.User.RequireUniqueEmail = true;
     options.SignIn.RequireConfirmedEmail = false;
 })
@@ -49,7 +49,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
-    
+
     // Create default admin user if no users exist
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     if (!userManager.Users.Any())
@@ -63,7 +63,7 @@ using (var scope = app.Services.CreateScope())
             Organization = "CertA",
             EmailConfirmed = true
         };
-        
+
         var result = await userManager.CreateAsync(adminUser, "Admin123!");
         if (result.Succeeded)
         {

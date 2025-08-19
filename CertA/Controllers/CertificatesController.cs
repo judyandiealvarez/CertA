@@ -17,7 +17,7 @@ namespace CertA.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
 
         public CertificatesController(
-            ICertificateService service, 
+            ICertificateService service,
             ICertificateAuthorityService caService,
             UserManager<ApplicationUser> userManager)
         {
@@ -75,7 +75,7 @@ namespace CertA.Controllers
         public async Task<IActionResult> Create(CreateCertificateVm vm)
         {
             if (!ModelState.IsValid) return View(vm);
-            
+
             try
             {
                 var userId = _userManager.GetUserId(User);
@@ -228,10 +228,10 @@ namespace CertA.Controllers
 
                 // Create X509Certificate2 from CA PEM
                 var certificate = X509Certificate2.CreateFromPem(ca.CertificatePem, ca.PrivateKeyPem);
-                
+
                 // Export as PKCS#12
                 var pfxBytes = certificate.Export(X509ContentType.Pfx, password);
-                
+
                 var fileName = $"{ca.CommonName.Replace(" ", "_")}_Root_CA.pfx";
                 return File(pfxBytes, "application/x-pkcs12", fileName);
             }

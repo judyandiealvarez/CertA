@@ -124,7 +124,7 @@ namespace CertA.Controllers
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            
+
             if (ModelState.IsValid)
             {
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
@@ -155,7 +155,7 @@ namespace CertA.Controllers
         public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            
+
             if (ModelState.IsValid)
             {
                 var user = new ApplicationUser
@@ -171,11 +171,11 @@ namespace CertA.Controllers
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password: {Email}", model.Email);
-                    
+
                     await _signInManager.SignInAsync(user, isPersistent: false);
                     return RedirectToLocal(returnUrl);
                 }
-                
+
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -219,7 +219,7 @@ namespace CertA.Controllers
 
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
-        
+
         public string? ReturnUrl { get; set; }
     }
 
@@ -251,7 +251,7 @@ namespace CertA.Controllers
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
-        
+
         public string? ReturnUrl { get; set; }
     }
 
