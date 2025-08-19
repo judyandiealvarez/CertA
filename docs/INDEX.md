@@ -287,7 +287,7 @@ CertA is a comprehensive Certification Authority system with user authentication
 ## 📄 License and Support
 
 ### License
-- **License**: MIT License
+- **License**: GNU Lesser General Public License v3.0
 - **Commercial Use**: Allowed with attribution
 - **Modifications**: Allowed with license preservation
 - **Distribution**: Allowed with source code inclusion
