@@ -143,36 +143,36 @@ jobs:
         run: |
           echo "Performing health check..."
           
-          # Get the node IP where the service is running
-          NODE_IP=$(docker node ls --format "table {{.Hostname}}\t{{.Status}}\t{{.Availability}}" | grep "Ready" | head -1 | awk '{print $1}')
+          # Wait a bit more for the application to fully start
+          sleep 30
           
-          if [ -z "$NODE_IP" ]; then
-            NODE_IP="localhost"
-          fi
-          
-          HEALTH_CHECK_URL="http://$NODE_IP:8080"
+          # Try to connect to the application on localhost (Swarm ingress)
+          HEALTH_CHECK_URL="http://localhost:8080"
           echo "Health check URL: $HEALTH_CHECK_URL"
           
           # Try to connect to the application
-          max_attempts=10
+          max_attempts=15
           attempt=1
           
           while [ $attempt -le $max_attempts ]; do
             echo "Health check attempt $attempt/$max_attempts"
             
-            if curl -f -s "$HEALTH_CHECK_URL" > /dev/null; then
+            if curl -f -s "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
               echo "Health check passed! Application is responding."
               break
             else
-              echo "Health check failed, retrying in 10 seconds..."
-              sleep 10
+              echo "Health check failed, retrying in 15 seconds..."
+              sleep 15
               attempt=$((attempt + 1))
             fi
           done
           
           # Final health check
-          if ! curl -f -s "$HEALTH_CHECK_URL" > /dev/null; then
+          if ! curl -f -s "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
             echo "Health check failed after all attempts"
+            echo "Trying to get more info..."
+            docker stack services certa
+            docker stack ps certa
             exit 1
           fi
 
