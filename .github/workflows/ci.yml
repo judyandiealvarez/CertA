@@ -11,7 +11,7 @@ env:
   IMAGE_NAME: judyandiealvarez/certa
 
 jobs:
-  build-and-push:
+  test:
     runs-on: docker-build
     steps:
       - name: Checkout repository
@@ -31,6 +31,13 @@ jobs:
       - name: Run tests
         run: dotnet test CertA/CertA.csproj --no-build --verbosity normal
 
+  build:
+    runs-on: docker-build
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Build Docker image
         run: docker build -t ${{ env.IMAGE_NAME }}:main -f CertA/Dockerfile .
 
@@ -39,7 +46,7 @@ jobs:
 
   deploy:
     runs-on: swarm
-    needs: build-and-push
+    needs: build
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     steps:
       - name: Checkout repository
