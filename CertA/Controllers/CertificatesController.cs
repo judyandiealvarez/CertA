@@ -194,8 +194,11 @@ namespace CertA.Controllers
         {
             try
             {
-                var ca = await _caService.GetActiveCAAsync();
-                return View(ca);
+                // Temporarily return a simple response to test
+                return Content("Authority page is working!", "text/plain");
+                
+                // var ca = await _caService.GetActiveCAAsync();
+                // return View(ca);
             }
             catch (Exception ex)
             {
