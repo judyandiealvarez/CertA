@@ -1,10 +1,11 @@
 using CertA.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 
 namespace CertA.Data
 {
-    public class AppDbContext : IdentityDbContext<ApplicationUser>
+    public class AppDbContext : IdentityDbContext<ApplicationUser>, IDataProtectionKeyContext
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -12,6 +13,7 @@ namespace CertA.Data
 
         public DbSet<CertificateEntity> Certificates { get; set; }
         public DbSet<CertificateAuthority> CertificateAuthorities { get; set; }
+        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -44,6 +46,13 @@ namespace CertA.Data
                 entity.Property(e => e.Locality).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.CertificatePem).IsRequired();
                 entity.Property(e => e.PrivateKeyPem).IsRequired();
+            });
+
+            modelBuilder.Entity<DataProtectionKey>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FriendlyName).HasMaxLength(255);
+                entity.Property(e => e.Xml).IsRequired();
             });
         }
     }

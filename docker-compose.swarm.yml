@@ -6,6 +6,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=10.11.2.11;Database=certa;Username=certa;Password=certa123;Port=5432
+      - ASPNETCORE_DATA_PROTECTION__DEFAULT_KEY_LIFETIME=90
+      - ASPNETCORE_DATA_PROTECTION__KEY_RING_AUTO_GENERATE_KEYS=true
     networks:
       - certa-network
     deploy:
@@ -41,4 +43,3 @@ services:
 networks:
   certa-network:
     driver: overlay
-    attachable: true
