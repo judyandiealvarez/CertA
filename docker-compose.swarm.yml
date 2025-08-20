@@ -48,10 +48,10 @@ networks:
 
 volumes:
   certa_logs:
-    driver: trajano/glusterfs-volume-plugin:latest
+    driver: trajano/glusterfs-volume-plugin
     driver_opts:
       volume: certa_logs
   certa_keys:
-    driver: trajano/glusterfs-volume-plugin:latest
+    driver: trajano/glusterfs-volume-plugin
     driver_opts:
       volume: certa_keys
