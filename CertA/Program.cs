@@ -67,7 +67,16 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    
+    try
+    {
+        db.Database.Migrate();
+    }
+    catch (InvalidOperationException ex) when (ex.Message.Contains("pending changes"))
+    {
+        // If there are pending model changes, ensure the database is created
+        db.Database.EnsureCreated();
+    }
 
     // Create default admin user if no users exist
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
