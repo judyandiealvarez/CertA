@@ -4,9 +4,6 @@ using CertA.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Serilog.Events;
-using Serilog.Sinks.PostgreSQL;
-using Serilog.Sinks.PostgreSQL.ColumnWriters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,26 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((ctx, lc) =>
 {
     var conn = ctx.Configuration.GetConnectionString("DefaultConnection");
-    var columnWriters = new Dictionary<string, ColumnWriterBase>
-    {
-        ["id"] = new SerialColumnWriter(),
-        ["timestamp"] = new TimestampColumnWriter(),
-        ["level"] = new LevelColumnWriter(renderAsText: true),
-        ["message"] = new MessageTemplateColumnWriter(),
-        ["message_rendered"] = new RenderedMessageColumnWriter(),
-        ["exception"] = new ExceptionColumnWriter(),
-        ["properties"] = new LogEventSerializedColumnWriter(),
-        ["event_id"] = new EventIdColumnWriter()
-    };
-
-    lc.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-      .MinimumLevel.Override("System", LogEventLevel.Warning)
-      .MinimumLevel.Information()
+    lc.MinimumLevel.Information()
       .WriteTo.Console()
       .WriteTo.PostgreSQL(
           connectionString: conn!,
           tableName: "application_logs",
-          columnOptions: columnWriters,
           needAutoCreateTable: true);
 });
 
