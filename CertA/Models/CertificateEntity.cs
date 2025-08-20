@@ -15,7 +15,8 @@ namespace CertA.Models
         Server = 0,
         Client = 1,
         CodeSigning = 2,
-        Email = 3
+        Email = 3,
+        Wildcard = 4
     }
 
     public class CertificateEntity
@@ -52,6 +53,25 @@ namespace CertA.Models
         public string UserId { get; set; } = string.Empty;
 
         public ApplicationUser? User { get; set; }
+
+        // Helper property to check if this is a wildcard certificate
+        public bool IsWildcard => CommonName.StartsWith("*.") || 
+                                 (SubjectAlternativeNames?.Contains("*.") == true);
+
+        // Helper method to get all domains (including wildcards)
+        public IEnumerable<string> GetAllDomains()
+        {
+            var domains = new List<string> { CommonName };
+            
+            if (!string.IsNullOrEmpty(SubjectAlternativeNames))
+            {
+                domains.AddRange(SubjectAlternativeNames.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => !string.IsNullOrEmpty(s)));
+            }
+            
+            return domains.Distinct();
+        }
     }
 }
 

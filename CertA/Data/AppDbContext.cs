@@ -33,6 +33,15 @@ namespace CertA.Data
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                // Index for user certificates
+                entity.HasIndex(e => e.UserId);
+                
+                // Index for certificate status
+                entity.HasIndex(e => e.Status);
+                
+                // Index for expiry date
+                entity.HasIndex(e => e.ExpiryDate);
             });
 
             modelBuilder.Entity<CertificateAuthority>(entity =>
@@ -46,6 +55,11 @@ namespace CertA.Data
                 entity.Property(e => e.Locality).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.CertificatePem).IsRequired();
                 entity.Property(e => e.PrivateKeyPem).IsRequired();
+
+                // Ensure only one active CA can exist
+                entity.HasIndex(e => e.IsActive)
+                    .HasFilter("\"IsActive\" = true")
+                    .IsUnique();
             });
 
             modelBuilder.Entity<DataProtectionKey>(entity =>

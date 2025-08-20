@@ -12,7 +12,9 @@ namespace CertA.Services
     {
         Task<CertificateAuthority?> GetActiveCAAsync();
         Task<CertificateAuthority> CreateRootCAAsync(string name, string commonName, string organization, string country, string state, string locality);
-        Task<X509Certificate2> SignCertificateAsync(CertificateRequest request, string commonName, string? sans);
+        Task<X509Certificate2> SignCertificateAsync(CertificateRequest request, string commonName, string? sans, CertificateType type);
+        Task<bool> DeactivateCAAsync(int caId);
+        Task<List<CertificateAuthority>> GetAllCAsAsync();
     }
 
     public class CertificateAuthorityService : ICertificateAuthorityService
@@ -29,13 +31,27 @@ namespace CertA.Services
         public async Task<CertificateAuthority?> GetActiveCAAsync()
         {
             return await _db.CertificateAuthorities
-                .Where(ca => ca.IsActive)
+                .Where(ca => ca.IsActive && !ca.IsExpired)
                 .OrderByDescending(ca => ca.CreatedDate)
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<List<CertificateAuthority>> GetAllCAsAsync()
+        {
+            return await _db.CertificateAuthorities
+                .OrderByDescending(ca => ca.CreatedDate)
+                .ToListAsync();
+        }
+
         public async Task<CertificateAuthority> CreateRootCAAsync(string name, string commonName, string organization, string country, string state, string locality)
         {
+            // Check if there's already an active CA
+            var existingCA = await GetActiveCAAsync();
+            if (existingCA != null)
+            {
+                throw new InvalidOperationException($"Cannot create new CA. There is already an active CA: {existingCA.Name} (ID: {existingCA.Id})");
+            }
+
             // Generate CA key pair
             using var rsa = RSA.Create(4096);
             var privateKeyPem = rsa.ExportRSAPrivateKeyPem();
@@ -82,7 +98,20 @@ namespace CertA.Services
             return ca;
         }
 
-        public async Task<X509Certificate2> SignCertificateAsync(CertificateRequest request, string commonName, string? sans)
+        public async Task<bool> DeactivateCAAsync(int caId)
+        {
+            var ca = await _db.CertificateAuthorities.FindAsync(caId);
+            if (ca == null)
+                return false;
+
+            ca.IsActive = false;
+            await _db.SaveChangesAsync();
+            
+            _logger.LogInformation("Deactivated CA {Name} (ID: {Id})", ca.Name, caId);
+            return true;
+        }
+
+        public async Task<X509Certificate2> SignCertificateAsync(CertificateRequest request, string commonName, string? sans, CertificateType type)
         {
             var ca = await GetActiveCAAsync();
             if (ca == null)
@@ -93,6 +122,12 @@ namespace CertA.Services
             var caPrivateKey = caCert.GetRSAPrivateKey();
             if (caPrivateKey == null)
                 throw new InvalidOperationException("CA private key not found");
+
+            // Validate wildcard certificates
+            if (type == CertificateType.Wildcard)
+            {
+                ValidateWildcardCertificate(commonName, sans);
+            }
 
             // Add SAN extension if provided
             if (!string.IsNullOrEmpty(sans))
@@ -120,13 +155,57 @@ namespace CertA.Services
             // Add basic constraints for end entity
             request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
 
-            // Add key usage
-            request.CertificateExtensions.Add(new X509KeyUsageExtension(
-                X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
+            // Add key usage based on certificate type
+            var keyUsage = X509KeyUsageFlags.DigitalSignature;
+            
+            switch (type)
+            {
+                case CertificateType.Server:
+                case CertificateType.Wildcard:
+                    keyUsage |= X509KeyUsageFlags.KeyEncipherment;
+                    break;
+                case CertificateType.Client:
+                    keyUsage |= X509KeyUsageFlags.KeyAgreement;
+                    break;
+                case CertificateType.CodeSigning:
+                    keyUsage |= X509KeyUsageFlags.DigitalSignature;
+                    break;
+                case CertificateType.Email:
+                    keyUsage |= X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DataEncipherment;
+                    break;
+            }
 
-            // Add extended key usage for server authentication
-            request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
-                new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, true)); // Server Authentication
+            request.CertificateExtensions.Add(new X509KeyUsageExtension(keyUsage, true));
+
+            // Add extended key usage based on certificate type
+            var oids = new List<Oid>();
+            
+            switch (type)
+            {
+                case CertificateType.Server:
+                case CertificateType.Wildcard:
+                    oids.Add(new Oid("1.3.6.1.5.5.7.3.1")); // Server Authentication
+                    break;
+                case CertificateType.Client:
+                    oids.Add(new Oid("1.3.6.1.5.5.7.3.2")); // Client Authentication
+                    break;
+                case CertificateType.CodeSigning:
+                    oids.Add(new Oid("1.3.6.1.5.5.7.3.3")); // Code Signing
+                    break;
+                case CertificateType.Email:
+                    oids.Add(new Oid("1.3.6.1.5.5.7.3.4")); // Email Protection
+                    break;
+            }
+
+            if (oids.Any())
+            {
+                var oidCollection = new OidCollection();
+                foreach (var oid in oids)
+                {
+                    oidCollection.Add(oid);
+                }
+                request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(oidCollection, true));
+            }
 
             // Sign the certificate
             var notBefore = DateTime.UtcNow;
@@ -135,8 +214,49 @@ namespace CertA.Services
 
             var signedCert = request.Create(caCert, notBefore, notAfter, serialNumber.ToByteArray());
 
-            _logger.LogInformation("Signed certificate for {CN} with serial {Serial}", commonName, serialNumber);
+            _logger.LogInformation("Signed {Type} certificate for {CN} with serial {Serial}", type, commonName, serialNumber);
             return signedCert;
+        }
+
+        private void ValidateWildcardCertificate(string commonName, string? sans)
+        {
+            // Validate that wildcard certificates follow proper format
+            if (!commonName.StartsWith("*."))
+            {
+                throw new ArgumentException("Wildcard certificates must start with '*.'");
+            }
+
+            // Validate wildcard domain format
+            var domain = commonName.Substring(2); // Remove "*."
+            if (domain.Contains("*"))
+            {
+                throw new ArgumentException("Wildcard certificates can only have one '*' at the beginning");
+            }
+
+            if (domain.StartsWith(".") || domain.EndsWith("."))
+            {
+                throw new ArgumentException("Invalid wildcard domain format");
+            }
+
+            // Validate SANs if provided
+            if (!string.IsNullOrEmpty(sans))
+            {
+                var sanList = sans.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => !string.IsNullOrEmpty(s));
+
+                foreach (var san in sanList)
+                {
+                    if (san.StartsWith("*."))
+                    {
+                        var sanDomain = san.Substring(2);
+                        if (sanDomain.Contains("*"))
+                        {
+                            throw new ArgumentException($"Invalid wildcard SAN format: {san}");
+                        }
+                    }
+                }
+            }
         }
 
         private static BigInteger GenerateSerialNumber()

@@ -14,10 +14,12 @@ namespace CertA.Services
         Task<List<CertificateEntity>> ListAsync(string userId);
         Task<CertificateEntity?> GetAsync(int id, string userId);
         Task<CertificateEntity> CreateAsync(string commonName, string? sans, CertificateType type, string userId);
+        Task<CertificateEntity> CreateWildcardAsync(string domain, string? additionalSans, string userId);
         Task<byte[]> GetPrivateKeyPemAsync(int id, string userId);
         Task<byte[]> GetPublicKeyPemAsync(int id, string userId);
         Task<byte[]> GetCertificatePemAsync(int id, string userId);
         Task<byte[]> GetPfxAsync(int id, string password, string userId);
+        Task<List<CertificateEntity>> GetExpiringCertificatesAsync(int daysThreshold = 30);
     }
 
     public class CertificateService : ICertificateService
@@ -75,7 +77,7 @@ namespace CertA.Services
             var request = new CertificateRequest(subject, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
             // Sign the certificate with our CA
-            var signedCertificate = await _caService.SignCertificateAsync(request, commonName, sans);
+            var signedCertificate = await _caService.SignCertificateAsync(request, commonName, sans, type);
             var certificatePem = signedCertificate.ExportCertificatePem();
 
             var notBefore = DateTime.UtcNow;
@@ -99,8 +101,45 @@ namespace CertA.Services
 
             _db.Certificates.Add(entity);
             await _db.SaveChangesAsync();
-            _logger.LogInformation("Created CA-signed certificate {Serial} for {CN} by user {UserId}", serialNumber, commonName, userId);
+            _logger.LogInformation("Created {Type} certificate {Serial} for {CN} by user {UserId}", type, serialNumber, commonName, userId);
             return entity;
+        }
+
+        public async Task<CertificateEntity> CreateWildcardAsync(string domain, string? additionalSans, string userId)
+        {
+            // Ensure domain doesn't start with wildcard
+            if (domain.StartsWith("*."))
+            {
+                domain = domain.Substring(2);
+            }
+
+            // Create wildcard common name
+            var wildcardCommonName = $"*.{domain}";
+
+            // Combine additional SANs
+            var allSans = new List<string> { wildcardCommonName };
+            if (!string.IsNullOrEmpty(additionalSans))
+            {
+                allSans.AddRange(additionalSans.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => !string.IsNullOrEmpty(s)));
+            }
+
+            var sansString = string.Join(",", allSans);
+
+            return await CreateAsync(wildcardCommonName, sansString, CertificateType.Wildcard, userId);
+        }
+
+        public async Task<List<CertificateEntity>> GetExpiringCertificatesAsync(int daysThreshold = 30)
+        {
+            var thresholdDate = DateTime.UtcNow.AddDays(daysThreshold);
+            
+            return await _db.Certificates
+                .Where(c => c.Status == CertificateStatus.Issued && 
+                           c.ExpiryDate <= thresholdDate && 
+                           c.ExpiryDate > DateTime.UtcNow)
+                .OrderBy(c => c.ExpiryDate)
+                .ToListAsync();
         }
 
         public async Task<byte[]> GetPrivateKeyPemAsync(int id, string userId)
