@@ -17,5 +17,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Complete CI/CD Pipeline
-        run: dotnet restore CertA/CertA.csproj && dotnet build CertA/CertA.csproj --no-restore && dotnet test CertA/CertA.csproj --no-build --verbosity normal && docker build -t ${{ env.IMAGE_NAME }}:main -f CertA/Dockerfile . && docker stack deploy -c docker-compose.swarm.yml certa && sleep 30 && curl -f http://$(docker stack ps certa --format "table {{.Node}}" | grep -v "NODE" | head -1):8080
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Security scan, build, test, and deploy
+        run: |
+          echo "=== SECURITY SCAN ==="
+          dotnet restore CertA/CertA.csproj
+          dotnet build CertA/CertA.csproj --no-restore
+          dotnet test CertA/CertA.csproj --no-build --verbosity normal
+          
+          echo "=== BUILD DOCKER IMAGE ==="
+          docker build -t ${{ env.IMAGE_NAME }}:main -f CertA/Dockerfile .
+          
+          echo "=== DEPLOY TO SWARM ==="
+          docker stack deploy -c docker-compose.swarm.yml certa
+          
+          echo "=== HEALTH CHECK ==="
+          sleep 30
+          SERVICE_NODE=$(docker stack ps certa --format "table {{.Node}}" | grep -v "NODE" | head -1)
+          curl -f http://$SERVICE_NODE:8080
+          
+          echo "=== DEPLOYMENT SUCCESSFUL ==="
+          docker stack services certa
