@@ -146,8 +146,17 @@ jobs:
           # Wait a bit more for the application to fully start
           sleep 30
           
-          # Try to connect to the application on localhost (Swarm ingress)
-          HEALTH_CHECK_URL="http://localhost:8080"
+          # Get the node where the service is running
+          SERVICE_NODE=$(docker stack ps certa --format "table {{.Node}}" | grep -v "NODE" | head -1)
+          echo "Service is running on node: $SERVICE_NODE"
+          
+          # Try to connect to the application on the service node
+          if [ "$SERVICE_NODE" = "docker" ]; then
+            HEALTH_CHECK_URL="http://localhost:8080"
+          else
+            HEALTH_CHECK_URL="http://$SERVICE_NODE:8080"
+          fi
+          
           echo "Health check URL: $HEALTH_CHECK_URL"
           
           # Try to connect to the application
@@ -157,7 +166,7 @@ jobs:
           while [ $attempt -le $max_attempts ]; do
             echo "Health check attempt $attempt/$max_attempts"
             
-            if curl -f -s "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
+            if curl -f -s --connect-timeout 10 "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
               echo "Health check passed! Application is responding."
               break
             else
@@ -168,11 +177,13 @@ jobs:
           done
           
           # Final health check
-          if ! curl -f -s "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
+          if ! curl -f -s --connect-timeout 10 "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
             echo "Health check failed after all attempts"
             echo "Trying to get more info..."
             docker stack services certa
             docker stack ps certa
+            echo "Testing connectivity to service node..."
+            ping -c 3 $SERVICE_NODE || echo "Cannot ping $SERVICE_NODE"
             exit 1
           fi
 
