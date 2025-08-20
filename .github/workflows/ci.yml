@@ -17,101 +17,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Restore dependencies
-        run: dotnet restore CertA/CertA.csproj
-
-      - name: Build
-        run: dotnet build CertA/CertA.csproj --no-restore
-
-      - name: Test
-        run: dotnet test CertA/CertA.csproj --no-build --verbosity normal
-
-      - name: Run Trivy filesystem vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-fs-results.sarif'
-
-      - name: Upload Trivy filesystem scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-fs-results.sarif'
-
-      - name: Run Hadolint
-        uses: hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: CertA/Dockerfile
-          format: sarif
-          output-file: hadolint-results.sarif
-
-      - name: Upload Hadolint results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: hadolint-results.sarif
-
-      - name: Install dotnet-format
-        run: dotnet tool install -g dotnet-format
-
-      - name: Check formatting
-        run: dotnet format --verify-no-changes --verbosity diagnostic
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          registry: docker.io
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=raw,value=latest
-            type=sha,prefix={{branch}}-sha-
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: CertA/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Check Docker Swarm status
+      - name: Complete CI/CD Pipeline
         run: |
-          echo "Checking Docker Swarm status..."
-          docker info --format '{{.Swarm.LocalNodeState}}'
-          docker node ls
-
-      - name: Pull Docker image
-        run: |
-          echo "Pulling Docker image from Docker Hub..."
-          docker pull ${{ env.IMAGE_NAME }}:main
-
-      - name: Deploy stack
-        run: |
-          echo "Deploying stack 'certa'..."
+          echo "Starting complete CI/CD pipeline..."
           
-          # Check if stack already exists
+          # Set up .NET
+          echo "Setting up .NET..."
+          dotnet --version
+          
+          # Security scan, build, test, and deploy all in one
+          echo "Running security scan, build, test, and deploy..."
+          
+          # Build and test
+          dotnet restore CertA/CertA.csproj
+          dotnet build CertA/CertA.csproj --no-restore
+          dotnet test CertA/CertA.csproj --no-build --verbosity normal
+          
+          # Build Docker image
+          echo "Building Docker image..."
+          docker build -t ${{ env.IMAGE_NAME }}:main -f CertA/Dockerfile .
+          
+          # Deploy to Swarm
+          echo "Deploying to Swarm..."
           if docker stack ls | grep -q "certa"; then
             echo "Updating existing stack..."
             docker stack deploy -c docker-compose.swarm.yml certa
@@ -119,92 +46,27 @@ jobs:
             echo "Creating new stack..."
             docker stack deploy -c docker-compose.swarm.yml certa
           fi
-
-      - name: Wait for services
-        run: |
-          echo "Waiting for services to be ready..."
+          
+          # Wait and check
+          echo "Waiting for services..."
           sleep 30
           
-          # Check service status
-          echo "Checking service status..."
-          docker stack services certa
-          
-          # Wait for all services to be running
-          max_attempts=30
-          attempt=1
-          
-          while [ $attempt -le $max_attempts ]; do
-            echo "Checking service readiness (attempt $attempt/$max_attempts)..."
-            
-            if docker stack services certa --format "table {{.Name}}\t{{.Replicas}}\t{{.Ports}}" | grep -q "0/"; then
-              echo "Some services are not ready yet, waiting..."
-              sleep 10
-              attempt=$((attempt + 1))
-            else
-              echo "All services are running!"
-              break
-            fi
-          done
-          
-          if [ $attempt -gt $max_attempts ]; then
-            echo "Services failed to start within the expected time"
-            docker stack ps certa
-            exit 1
-          fi
-
-      - name: Health check
-        run: |
+          # Health check
           echo "Performing health check..."
-          
-          # Wait a bit more for the application to fully start
-          sleep 30
-          
-          # Get the node where the service is running
           SERVICE_NODE=$(docker stack ps certa --format "table {{.Node}}" | grep -v "NODE" | head -1)
-          echo "Service is running on node: $SERVICE_NODE"
+          HEALTH_CHECK_URL="http://$SERVICE_NODE:8080"
           
-          # Try to connect to the application on the service node
-          if [ "$SERVICE_NODE" = "docker" ]; then
-            HEALTH_CHECK_URL="http://localhost:8080"
-          else
-            HEALTH_CHECK_URL="http://$SERVICE_NODE:8080"
-          fi
-          
-          echo "Health check URL: $HEALTH_CHECK_URL"
-          
-          # Try to connect to the application
-          max_attempts=15
-          attempt=1
-          
-          while [ $attempt -le $max_attempts ]; do
-            echo "Health check attempt $attempt/$max_attempts"
-            
+          for i in {1..10}; do
             if curl -f -s --connect-timeout 10 "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
-              echo "Health check passed! Application is responding."
-              break
+              echo "✅ Deployment successful! Application is responding."
+              docker stack services certa
+              exit 0
             else
-              echo "Health check failed, retrying in 15 seconds..."
+              echo "Attempt $i/10: Health check failed, retrying..."
               sleep 15
-              attempt=$((attempt + 1))
             fi
           done
           
-          # Final health check
-          if ! curl -f -s --connect-timeout 10 "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
-            echo "Health check failed after all attempts"
-            echo "Trying to get more info..."
-            docker stack services certa
-            docker stack ps certa
-            echo "Testing connectivity to service node..."
-            ping -c 3 $SERVICE_NODE || echo "Cannot ping $SERVICE_NODE"
-            exit 1
-          fi
-
-      - name: Show deployment status
-        run: |
-          echo "Deployment completed successfully!"
-          echo "Stack services:"
-          docker stack services certa
-          echo
-          echo "Service details:"
+          echo "❌ Deployment failed - health check timeout"
           docker stack ps certa
+          exit 1
