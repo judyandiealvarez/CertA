@@ -15,15 +15,18 @@ namespace CertA.Controllers
         private readonly ICertificateService _service;
         private readonly ICertificateAuthorityService _caService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<CertificatesController> _logger;
 
         public CertificatesController(
             ICertificateService service,
             ICertificateAuthorityService caService,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            ILogger<CertificatesController> logger)
         {
             _service = service;
             _caService = caService;
             _userManager = userManager;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -196,7 +199,12 @@ namespace CertA.Controllers
             }
             catch (Exception ex)
             {
-                return NotFound();
+                // Log the exception for debugging
+                _logger.LogError(ex, "Error in Authority action: {Message}", ex.Message);
+                
+                // Return the view with null model instead of NotFound
+                // This will show the "No Certificate Authority Found" message
+                return View((CertificateAuthority?)null);
             }
         }
 
