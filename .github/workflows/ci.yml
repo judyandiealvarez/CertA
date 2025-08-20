@@ -64,23 +64,13 @@ jobs:
         run: docker pull ${{ env.IMAGE_NAME }}:main
 
       - name: Deploy to Swarm
-        run: |
-          # Set up Docker context for remote swarm
-          echo "${{ secrets.SWARM_SSH_KEY }}" > swarm_key.pem
-          chmod 600 swarm_key.pem
-          docker context create swarm --docker "host=ssh://jaal@10.11.2.6" || true
-          docker context use swarm
-          
-          # Deploy to remote swarm master
-          docker stack deploy -c docker-compose.swarm.yml certa --with-registry-auth
+        run: docker stack deploy -c docker-compose.swarm.yml certa
 
       - name: Wait for services
         run: sleep 30
 
       - name: Health check
-        run: |
-          # Check health on remote swarm master
-          ssh -o StrictHostKeyChecking=no -i swarm_key.pem jaal@10.11.2.6 "curl -f http://localhost:8080"
+        run: curl -f http://localhost:8080
 
       - name: Show deployment status
-        run: ssh -o StrictHostKeyChecking=no -i swarm_key.pem jaal@10.11.2.6 "docker stack services certa"
+        run: docker stack services certa
