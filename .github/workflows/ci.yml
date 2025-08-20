@@ -74,8 +74,17 @@ jobs:
 
       - name: Health check
         run: |
+          # Get the node where the service is running
           SERVICE_NODE=$(docker stack ps certa --format "table {{.Node}}" | grep -v "NODE" | head -1)
-          curl -f http://$SERVICE_NODE:8080
+          echo "Service node: $SERVICE_NODE"
+          
+          # Check if we got a valid node
+          if [ -z "$SERVICE_NODE" ]; then
+            echo "No service node found, checking localhost instead"
+            curl -f http://localhost:8080
+          else
+            curl -f http://$SERVICE_NODE:8080
+          fi
 
       - name: Show deployment status
         run: docker stack services certa
