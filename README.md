@@ -17,22 +17,27 @@ A comprehensive Certification Authority (CA) system with web-based certificate m
 - **Session Management** - Configurable cookie-based authentication with 12-hour sessions
 
 ### 🏛️ Certificate Authority
+- **Single Root CA Enforcement** - Only one active Certificate Authority per server
 - **Root CA Management** - Self-signed root certificate authority
 - **Certificate Issuance** - CA-signed certificates with proper X.509 extensions
-- **Certificate Types** - Server, Client, Code Signing, and Email certificates
+- **Certificate Types** - Server, Client, Code Signing, Email, and **Wildcard** certificates
 - **Subject Alternative Names (SAN)** - Support for multiple domain names and IP addresses
+- **Wildcard Certificate Support** - Create `*.example.com` certificates for subdomain coverage
 
 ### 📜 Certificate Management
 - **Web-based Interface** - User-friendly certificate creation and management
 - **Multiple Formats** - Download certificates in PEM, PFX/PKCS#12 formats
 - **Key Management** - Separate downloads for public and private keys
 - **Certificate Details** - Comprehensive certificate information display
+- **Certificate Ownership** - All certificates are owned by users
+- **Expiration Monitoring** - Track certificate expiration dates
 
 ### 🔧 Technical Features
-- **ACME Protocol Support** - Automated certificate management (planned)
 - **Database Storage** - PostgreSQL with Entity Framework Core
-- **Docker Support** - Complete containerization with Docker Compose
+- **Data Protection** - ASP.NET Core Data Protection keys stored in database
+- **Docker Support** - Complete containerization with Docker Compose and Docker Swarm
 - **Cross-platform** - Works on Windows, macOS, and Linux
+- **Multi-replica Deployment** - Support for high availability with multiple replicas
 
 ## 🚀 Quick Start
 
@@ -88,10 +93,21 @@ A comprehensive Certification Authority (CA) system with web-based certificate m
 2. **Navigate** to "My Certificates"
 3. **Click** "New Certificate"
 4. **Fill in** the certificate details:
-   - Common Name (e.g., `example.com`)
+   - Common Name (e.g., `example.com` for regular certificates, `example.com` for wildcard certificates)
    - Subject Alternative Names (optional, comma-separated)
-   - Certificate Type (Server, Client, Code Signing, Email)
+   - Certificate Type:
+     - **Server** - For web servers and HTTPS
+     - **Client** - For client authentication
+     - **Code Signing** - For software signing
+     - **Email** - For email encryption/signing
+     - **Wildcard** - For `*.example.com` subdomain coverage
 5. **Click** "Create Certificate"
+
+### Wildcard Certificates
+- **Automatic Formatting** - Enter `example.com` and the system creates `*.example.com`
+- **Validation** - Ensures proper wildcard format and single wildcard per certificate
+- **Subdomain Coverage** - Covers all subdomains of the specified domain
+- **Security** - Proper X.509 extensions for wildcard usage
 
 ### Downloading Certificates
 1. **View** your certificate details
@@ -105,6 +121,7 @@ A comprehensive Certification Authority (CA) system with web-based certificate m
 - **Public Access** - Anyone can view CA information without login
 - **Root CA Download** - Download the root CA certificate for trust establishment
 - **Installation Instructions** - Platform-specific guides for CA installation
+- **Single CA Policy** - Only one active CA per server for security
 
 ## 🏗️ Architecture
 
@@ -113,14 +130,16 @@ A comprehensive Certification Authority (CA) system with web-based certificate m
 - **Database** - PostgreSQL with Entity Framework Core
 - **Authentication** - ASP.NET Core Identity
 - **Certificate Services** - Custom services for CA and certificate management
-- **Containerization** - Docker and Docker Compose
+- **Data Protection** - Database-backed ASP.NET Core Data Protection
+- **Containerization** - Docker and Docker Compose/Swarm
 
 ### Security Model
 - **User Isolation** - Complete separation of user data
 - **Authentication Required** - All sensitive operations require login
 - **Password Security** - Enforced password requirements
 - **Session Management** - Secure cookie-based sessions
-- **Data Protection** - Encrypted data storage
+- **Data Protection** - Encrypted data storage with database-backed keys
+- **Single CA Enforcement** - Prevents multiple CAs for security
 
 ## 🔧 Configuration
 
@@ -130,13 +149,15 @@ A comprehensive Certification Authority (CA) system with web-based certificate m
 ConnectionStrings__DefaultConnection=Host=postgres;Database=certa;Username=certa;Password=certa123;Port=5432
 
 # Application
-ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_DATA_PROTECTION__DEFAULT_KEY_LIFETIME=90
+ASPNETCORE_DATA_PROTECTION__KEY_RING_AUTO_GENERATE_KEYS=true
 ```
 
 ### Docker Configuration
-- **PostgreSQL**: Port 5433 (host) → 5432 (container)
+- **PostgreSQL**: External database support
 - **Web Application**: Port 8080 (host) → 8080 (container)
-- **Volumes**: Persistent data storage for database and logs
+- **Multi-replica Support**: Configurable replica count for high availability
 
 ## 📚 Documentation
 
@@ -159,10 +180,11 @@ ASPNETCORE_ENVIRONMENT=Development
 - **CA Security**: Root CA private key protection
 - **Certificate Validation**: Proper X.509 extension validation
 - **User Isolation**: Complete data separation between users
+- **Single CA Policy**: Prevents certificate authority conflicts
 
 ### Data Protection
 - **Database Security**: Encrypted connections and access control
-- **File System Security**: Secure storage of certificates and keys
+- **Data Protection Keys**: Database-backed ASP.NET Core Data Protection
 - **Network Security**: HTTPS enforcement in production
 
 ## 🛠️ Development
@@ -205,6 +227,18 @@ docker-compose logs -f
 docker-compose down
 ```
 
+### Docker Swarm Deployment
+```bash
+# Deploy to swarm
+docker stack deploy -c docker-compose.swarm.yml certa
+
+# Check service status
+docker service ls | grep certa
+
+# View logs
+docker service logs certa_certa-app
+```
+
 ### Environment Configuration
 ```bash
 # Copy environment file
@@ -220,7 +254,7 @@ docker-compose --env-file .env up -d
 ## 📊 Monitoring & Logging
 
 ### Application Logs
-- **Serilog Integration** - Structured logging
+- **Serilog Integration** - Structured logging to PostgreSQL
 - **File Logging** - Persistent log storage
 - **Console Logging** - Development debugging
 - **Log Levels** - Configurable verbosity
@@ -306,13 +340,11 @@ For detailed workflow information, see [.github/workflows/README.md](.github/wor
 - **v1.0.0** - Initial release with basic CA functionality
 - **v1.1.0** - Added user authentication and authorization
 - **v1.2.0** - Profile management and password changes
-- **v1.3.0** - Enhanced security and monitoring (planned)
+- **v1.3.0** - Wildcard certificate support and single CA enforcement
+- **v1.4.0** - Enhanced security and monitoring (planned)
 
 ---
 
 **CertA** - Secure Certificate Authority Management Made Simple
 
 *Last updated: August 2025*
-test
-# Trigger new build
-# Trigger new build - Wed Aug 20 11:57:11 EEST 2025

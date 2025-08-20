@@ -104,6 +104,58 @@ Content-Type: application/x-www-form-urlencoded
 **Response:**
 - `302 Found` - Redirects to profile page with success/error message
 
+## 🔧 New Features
+
+### Wildcard Certificate Support
+
+The system now supports wildcard certificates for subdomain coverage.
+
+#### Wildcard Certificate Creation
+```http
+POST /Certificates/Create
+Content-Type: application/x-www-form-urlencoded
+```
+
+**Request Body for Wildcard Certificate:**
+```json
+{
+  "CommonName": "example.com",
+  "SubjectAlternativeNames": "www.example.com,api.example.com",
+  "Type": "Wildcard"
+}
+```
+
+**Response:**
+- Creates `*.example.com` certificate
+- Includes additional SANs if provided
+- Validates wildcard format automatically
+
+#### Wildcard Validation Rules
+- Only one wildcard per certificate
+- Must follow format: `*.domain.com`
+- Cannot contain multiple wildcards
+- Proper X.509 extensions applied
+
+### Single CA Enforcement
+
+The system enforces a single active Certificate Authority per server for security.
+
+#### CA Management
+- Only one active CA allowed
+- Automatic CA creation on first certificate
+- CA deactivation support
+- Unique constraint on active CAs
+
+### Data Protection
+
+ASP.NET Core Data Protection keys are now stored in the database.
+
+#### Benefits
+- Multi-replica deployment support
+- No file system dependencies
+- Improved security and scalability
+- Automatic key rotation
+
 ## 📜 Certificate Management
 
 ### List User Certificates
@@ -291,15 +343,24 @@ Content-Disposition: attachment; filename="CertA_Root_CA.pfx"
 ## 📊 Data Models
 
 ### Certificate Types
+
 ```csharp
 public enum CertificateType
 {
     Server = 0,        // Web server certificates
-    Client = 1,        // Client authentication
+    Client = 1,        // Client authentication certificates
     CodeSigning = 2,   // Code signing certificates
-    Email = 3          // Email encryption/signing
+    Email = 3,         // Email encryption/signing certificates
+    Wildcard = 4       // Wildcard certificates for subdomain coverage
 }
 ```
+
+**Certificate Type Descriptions:**
+- **Server**: For web servers and HTTPS connections
+- **Client**: For client authentication
+- **Code Signing**: For software and code signing
+- **Email**: For email encryption and signing
+- **Wildcard**: For subdomain coverage (e.g., `*.example.com`)
 
 ### Certificate Status
 ```csharp

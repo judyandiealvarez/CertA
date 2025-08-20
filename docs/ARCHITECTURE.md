@@ -88,6 +88,122 @@ public class ApplicationUser : IdentityUser
 | Certificate Downloads | ❌ | ✅ (own only) | ✅ |
 | Profile Management | ❌ | ✅ (own only) | ✅ |
 
+## 🔧 New Features Architecture
+
+### Wildcard Certificate Support
+
+The system now supports wildcard certificates with proper validation and X.509 extensions.
+
+#### Wildcard Certificate Model
+```csharp
+public enum CertificateType
+{
+    Server = 0,
+    Client = 1,
+    CodeSigning = 2,
+    Email = 3,
+    Wildcard = 4  // New wildcard type
+}
+```
+
+#### Wildcard Validation
+- **Format Validation**: Ensures `*.domain.com` format
+- **Single Wildcard Rule**: Only one wildcard per certificate
+- **Domain Validation**: Prevents invalid wildcard patterns
+- **X.509 Extensions**: Proper extensions for wildcard usage
+
+#### Implementation Details
+```csharp
+public bool IsWildcard => CommonName.StartsWith("*.") || 
+                         (SubjectAlternativeNames?.Contains("*.") == true);
+
+public IEnumerable<string> GetAllDomains()
+{
+    var domains = new List<string> { CommonName };
+    if (!string.IsNullOrEmpty(SubjectAlternativeNames))
+    {
+        domains.AddRange(SubjectAlternativeNames.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => !string.IsNullOrEmpty(s)));
+    }
+    return domains.Distinct();
+}
+```
+
+### Single CA Enforcement
+
+The system enforces a single active Certificate Authority per server for security.
+
+#### Database Constraints
+```sql
+-- Unique filtered index ensures only one active CA
+CREATE UNIQUE INDEX "IX_CertificateAuthorities_IsActive" 
+ON "CertificateAuthorities" ("IsActive") 
+WHERE "IsActive" = true;
+```
+
+#### CA Management Logic
+- **Automatic CA Creation**: First certificate creates CA automatically
+- **Single Active CA**: Only one CA can be active at a time
+- **CA Deactivation**: Support for deactivating existing CAs
+- **CA Validation**: Proper CA certificate extensions and key usage
+
+### Data Protection Architecture
+
+ASP.NET Core Data Protection keys are now stored in the database for multi-replica support.
+
+#### Data Protection Model
+```csharp
+public class DataProtectionKey
+{
+    public int Id { get; set; }
+    public string FriendlyName { get; set; } = string.Empty;
+    public string Xml { get; set; } = string.Empty;
+}
+```
+
+#### Configuration
+```csharp
+// Program.cs
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<AppDbContext>();
+```
+
+#### Benefits
+- **Multi-Replica Support**: Keys shared across all replicas
+- **No File System Dependencies**: Eliminates volume mounting requirements
+- **Automatic Key Rotation**: Built-in key lifecycle management
+- **Improved Security**: Database-backed key storage
+
+### Enhanced Logging Architecture
+
+The system uses Serilog for structured logging to PostgreSQL.
+
+#### Logging Configuration
+```csharp
+// Program.cs
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.PostgreSQL(
+        connectionString: context.Configuration.GetConnectionString("DefaultConnection"),
+        tableName: "Logs",
+        columnOptions: new Dictionary<string, Serilog.Sinks.PostgreSQL.ColumnWriterBase>
+        {
+            { "message", new RenderedMessageColumnWriter() },
+            { "level", new LevelColumnWriter() },
+            { "timestamp", new TimestampColumnWriter() }
+        }));
+```
+
+#### Log Storage
+- **PostgreSQL Sink**: Structured logs stored in database
+- **Console Output**: Development and debugging
+- **Structured Format**: JSON-like log entries
+- **Performance**: Efficient database logging
+
 ## 📜 Certificate Architecture
 
 ### Certificate Hierarchy

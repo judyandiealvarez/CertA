@@ -141,13 +141,43 @@ Complete guide for using the CertA Certification Authority system.
 
 2. **Fill in Certificate Details**
    - **Common Name**: Primary domain name (e.g., `example.com`)
-   - **Subject Alternative Names**: Additional domains (e.g., `www.example.com, api.example.com`)
-   - **Certificate Type**: Select appropriate type (Server, Client, Code Signing, Email)
+   - **Subject Alternative Names**: Additional domains (optional, comma-separated)
+   - **Certificate Type**: Choose from the following options:
+     - **Server** - For web servers and HTTPS connections
+     - **Client** - For client authentication
+     - **Code Signing** - For software and code signing
+     - **Email** - For email encryption and signing
+     - **Wildcard** - For subdomain coverage (`*.example.com`)
 
 3. **Create Certificate**
    - Click "Create Certificate"
-   - The system will generate a CA-signed certificate
+   - The system will automatically create a Certificate Authority if none exists
    - You'll be redirected to the certificate details page
+
+### Wildcard Certificates
+
+Wildcard certificates allow you to secure all subdomains of a domain with a single certificate.
+
+#### Creating Wildcard Certificates
+
+1. **Select Wildcard Type**
+   - Choose "Wildcard" as the certificate type
+   - Enter the base domain (e.g., `example.com`)
+   - The system automatically creates `*.example.com`
+
+2. **Validation Rules**
+   - Only one wildcard per certificate
+   - Must follow proper format (`*.domain.com`)
+   - Cannot contain multiple wildcards
+
+3. **Usage Examples**
+   - `*.example.com` covers: `www.example.com`, `api.example.com`, `mail.example.com`, etc.
+   - `*.sub.example.com` covers: `api.sub.example.com`, `web.sub.example.com`, etc.
+
+4. **Security Considerations**
+   - Wildcard certificates are powerful but should be used carefully
+   - If compromised, they affect all subdomains
+   - Consider using specific certificates for critical subdomains
 
 ### Viewing Your Certificates
 
