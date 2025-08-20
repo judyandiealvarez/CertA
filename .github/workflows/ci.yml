@@ -22,18 +22,20 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Security scan, build, test, and push
-        run: |
-          echo "=== SECURITY SCAN ==="
-          dotnet restore CertA/CertA.csproj
-          dotnet build CertA/CertA.csproj --no-restore
-          dotnet test CertA/CertA.csproj --no-build --verbosity normal
-          
-          echo "=== BUILD DOCKER IMAGE ==="
-          docker build -t ${{ env.IMAGE_NAME }}:main -f CertA/Dockerfile .
-          
-          echo "=== PUSH TO DOCKER HUB ==="
-          docker push ${{ env.IMAGE_NAME }}:main
+      - name: Restore dependencies
+        run: dotnet restore CertA/CertA.csproj
+
+      - name: Build application
+        run: dotnet build CertA/CertA.csproj --no-restore
+
+      - name: Run tests
+        run: dotnet test CertA/CertA.csproj --no-build --verbosity normal
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_NAME }}:main -f CertA/Dockerfile .
+
+      - name: Push to Docker Hub
+        run: docker push ${{ env.IMAGE_NAME }}:main
 
   deploy:
     runs-on: swarm
@@ -43,18 +45,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Pull Docker image
+        run: docker pull ${{ env.IMAGE_NAME }}:main
+
       - name: Deploy to Swarm
+        run: docker stack deploy -c docker-compose.swarm.yml certa
+
+      - name: Wait for services
+        run: sleep 30
+
+      - name: Health check
         run: |
-          echo "=== PULL IMAGE ==="
-          docker pull ${{ env.IMAGE_NAME }}:main
-          
-          echo "=== DEPLOY TO SWARM ==="
-          docker stack deploy -c docker-compose.swarm.yml certa
-          
-          echo "=== HEALTH CHECK ==="
-          sleep 30
           SERVICE_NODE=$(docker stack ps certa --format "table {{.Node}}" | grep -v "NODE" | head -1)
           curl -f http://$SERVICE_NODE:8080
-          
-          echo "=== DEPLOYMENT SUCCESSFUL ==="
-          docker stack services certa
+
+      - name: Show deployment status
+        run: docker stack services certa
