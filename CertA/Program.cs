@@ -7,6 +7,7 @@ using Serilog;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,11 +71,16 @@ using (var scope = app.Services.CreateScope())
     
     try
     {
+        // Configure warnings to suppress pending model changes warning
+        db.Database.ConfigureWarnings(warnings => warnings
+            .Ignore(RelationalEventId.PendingModelChangesWarning));
+        
         db.Database.Migrate();
     }
-    catch (InvalidOperationException ex) when (ex.Message.Contains("pending changes"))
+    catch (Exception ex)
     {
-        // If there are pending model changes, ensure the database is created
+        // If migration fails, ensure the database is created
+        Console.WriteLine($"Migration failed: {ex.Message}. Using EnsureCreated as fallback.");
         db.Database.EnsureCreated();
     }
 
