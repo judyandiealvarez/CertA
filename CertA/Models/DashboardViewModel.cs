@@ -8,5 +8,7 @@ namespace CertA.Models
         public int IssuedCertificates { get; set; }
         public int PendingRequests { get; set; }
         public int ExpiredCertificates { get; set; }
+        public bool ActiveCA { get; set; }
+        public List<CertificateEntity> RecentCertificates { get; set; } = new List<CertificateEntity>();
     }
 }
