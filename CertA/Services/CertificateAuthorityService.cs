@@ -31,7 +31,7 @@ namespace CertA.Services
         public async Task<CertificateAuthority?> GetActiveCAAsync()
         {
             return await _db.CertificateAuthorities
-                .Where(ca => ca.IsActive && !ca.IsExpired)
+                .Where(ca => ca.IsActive && ca.ExpiryDate > DateTime.UtcNow)
                 .OrderByDescending(ca => ca.CreatedDate)
                 .FirstOrDefaultAsync();
         }
