@@ -65,26 +65,22 @@ jobs:
 
       - name: Deploy to Swarm
         run: |
-          # Initialize swarm if not already initialized
-          docker swarm init --advertise-addr 127.0.0.1 || true
-          docker stack deploy -c docker-compose.swarm.yml certa
+          # Set up Docker context for remote swarm
+          echo "${{ secrets.SWARM_SSH_KEY }}" > swarm_key.pem
+          chmod 600 swarm_key.pem
+          docker context create swarm --docker "host=ssh://jaal@10.11.2.6" || true
+          docker context use swarm
+          
+          # Deploy to remote swarm master
+          docker stack deploy -c docker-compose.swarm.yml certa --with-registry-auth
 
       - name: Wait for services
         run: sleep 30
 
       - name: Health check
         run: |
-          # Get the node where the service is running
-          SERVICE_NODE=$(docker stack ps certa --format "table {{.Node}}" | grep -v "NODE" | head -1)
-          echo "Service node: $SERVICE_NODE"
-          
-          # Check if we got a valid node
-          if [ -z "$SERVICE_NODE" ]; then
-            echo "No service node found, checking localhost instead"
-            curl -f http://localhost:8080
-          else
-            curl -f http://$SERVICE_NODE:8080
-          fi
+          # Check health on remote swarm master
+          ssh -o StrictHostKeyChecking=no -i swarm_key.pem jaal@10.11.2.6 "curl -f http://localhost:8080"
 
       - name: Show deployment status
-        run: docker stack services certa
+        run: ssh -o StrictHostKeyChecking=no -i swarm_key.pem jaal@10.11.2.6 "docker stack services certa"
