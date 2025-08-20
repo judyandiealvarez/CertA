@@ -87,12 +87,16 @@ namespace CertA.Controllers
                     return RedirectToAction("Login", "Account");
                 }
 
+                _logger.LogInformation("Creating {Type} certificate for {CommonName} by user {UserId}", vm.Type, vm.CommonName, userId);
                 var created = await _service.CreateAsync(vm.CommonName, vm.SubjectAlternativeNames, vm.Type, userId);
+                _logger.LogInformation("Successfully created certificate {Id} for {CommonName}", created.Id, vm.CommonName);
                 return RedirectToAction(nameof(Details), new { id = created.Id });
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", "Failed to create certificate. Please try again.");
+                _logger.LogError(ex, "Failed to create {Type} certificate for {CommonName} by user {UserId}: {Message}", 
+                    vm.Type, vm.CommonName, _userManager.GetUserId(User), ex.Message);
+                ModelState.AddModelError("", $"Failed to create certificate: {ex.Message}");
                 return View(vm);
             }
         }
