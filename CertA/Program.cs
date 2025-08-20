@@ -71,10 +71,6 @@ using (var scope = app.Services.CreateScope())
     
     try
     {
-        // Configure warnings to suppress pending model changes warning
-        db.Database.ConfigureWarnings(warnings => warnings
-            .Ignore(RelationalEventId.PendingModelChangesWarning));
-        
         db.Database.Migrate();
     }
     catch (Exception ex)

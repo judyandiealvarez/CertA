@@ -190,7 +190,7 @@ namespace CertA.Controllers
         }
 
         [AllowAnonymous]
-        public async Task<IActionResult> Authority()
+        public IActionResult Authority()
         {
             try
             {
