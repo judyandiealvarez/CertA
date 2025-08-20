@@ -190,15 +190,12 @@ namespace CertA.Controllers
         }
 
         [AllowAnonymous]
-        public IActionResult Authority()
+        public async Task<IActionResult> Authority()
         {
             try
             {
-                // Temporarily return a simple response to test
-                return Content("Authority page is working!", "text/plain");
-                
-                // var ca = await _caService.GetActiveCAAsync();
-                // return View(ca);
+                var ca = await _caService.GetActiveCAAsync();
+                return View(ca);
             }
             catch (Exception ex)
             {
