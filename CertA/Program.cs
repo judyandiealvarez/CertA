@@ -3,10 +3,22 @@ using CertA.Models;
 using CertA.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Host.UseSerilog((ctx, lc) =>
+{
+    var conn = ctx.Configuration.GetConnectionString("DefaultConnection");
+    lc.ReadFrom.Configuration(ctx.Configuration)
+      .WriteTo.Console()
+      .WriteTo.PostgreSQL(
+          connectionString: conn!,
+          tableName: "application_logs",
+          needAutoCreateTable: true);
+});
+
 builder.Services.AddControllersWithViews();
 
 // Add Entity Framework
