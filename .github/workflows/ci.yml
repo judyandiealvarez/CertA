@@ -34,6 +34,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: test
+    environment: public
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,7 +64,10 @@ jobs:
         run: docker pull ${{ env.IMAGE_NAME }}:main
 
       - name: Deploy to Swarm
-        run: docker stack deploy -c docker-compose.swarm.yml certa
+        run: |
+          # Initialize swarm if not already initialized
+          docker swarm init --advertise-addr 127.0.0.1 || true
+          docker stack deploy -c docker-compose.swarm.yml certa
 
       - name: Wait for services
         run: sleep 30
