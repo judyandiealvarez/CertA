@@ -11,8 +11,8 @@ env:
   IMAGE_NAME: judyandiealvarez/certa
 
 jobs:
-  ci-cd:
-    runs-on: swarm
+  build-and-push:
+    runs-on: docker-build
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,7 +22,7 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Security scan, build, test, and deploy
+      - name: Security scan, build, test, and push
         run: |
           echo "=== SECURITY SCAN ==="
           dotnet restore CertA/CertA.csproj
@@ -31,6 +31,22 @@ jobs:
           
           echo "=== BUILD DOCKER IMAGE ==="
           docker build -t ${{ env.IMAGE_NAME }}:main -f CertA/Dockerfile .
+          
+          echo "=== PUSH TO DOCKER HUB ==="
+          docker push ${{ env.IMAGE_NAME }}:main
+
+  deploy:
+    runs-on: swarm
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Swarm
+        run: |
+          echo "=== PULL IMAGE ==="
+          docker pull ${{ env.IMAGE_NAME }}:main
           
           echo "=== DEPLOY TO SWARM ==="
           docker stack deploy -c docker-compose.swarm.yml certa
