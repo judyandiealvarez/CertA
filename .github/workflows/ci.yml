@@ -52,7 +52,7 @@ jobs:
         run: docker push ${{ env.IMAGE_NAME }}:main
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: swarm
     needs: build
     environment: public
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
