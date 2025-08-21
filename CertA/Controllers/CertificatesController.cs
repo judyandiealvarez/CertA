@@ -252,6 +252,36 @@ namespace CertA.Controllers
                 return NotFound();
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var success = await _service.DeleteAsync(id, userId);
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Certificate deleted successfully.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Certificate not found or could not be deleted.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting certificate {Id}", id);
+                TempData["ErrorMessage"] = "An error occurred while deleting the certificate.";
+            }
+
+            return RedirectToAction("Index");
+        }
     }
 
     public class CreateCertificateVm

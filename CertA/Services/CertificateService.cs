@@ -15,6 +15,7 @@ namespace CertA.Services
         Task<CertificateEntity?> GetAsync(int id, string userId);
         Task<CertificateEntity> CreateAsync(string commonName, string? sans, CertificateType type, string userId);
         Task<CertificateEntity> CreateWildcardAsync(string domain, string? additionalSans, string userId);
+        Task<bool> DeleteAsync(int id, string userId);
         Task<byte[]> GetPrivateKeyPemAsync(int id, string userId);
         Task<byte[]> GetPublicKeyPemAsync(int id, string userId);
         Task<byte[]> GetCertificatePemAsync(int id, string userId);
@@ -140,6 +141,24 @@ namespace CertA.Services
                            c.ExpiryDate > DateTime.UtcNow)
                 .OrderBy(c => c.ExpiryDate)
                 .ToListAsync();
+        }
+
+        public async Task<bool> DeleteAsync(int id, string userId)
+        {
+            var certificate = await _db.Certificates
+                .Where(c => c.Id == id && c.UserId == userId)
+                .FirstOrDefaultAsync();
+
+            if (certificate == null)
+            {
+                return false;
+            }
+
+            _db.Certificates.Remove(certificate);
+            await _db.SaveChangesAsync();
+            
+            _logger.LogInformation("Deleted certificate {Id} ({CommonName}) for user {UserId}", id, certificate.CommonName, userId);
+            return true;
         }
 
         public async Task<byte[]> GetPrivateKeyPemAsync(int id, string userId)
