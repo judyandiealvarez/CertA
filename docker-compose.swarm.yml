@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   certa-app:
-    image: judyandiealvarez/certa:main
+    image: judyandiealvarez/certa:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=10.11.2.11;Database=certa;Username=certa;Password=certa123;Port=5432
