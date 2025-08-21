@@ -72,6 +72,11 @@ namespace CertA.Models
             
             return domains.Distinct();
         }
+
+        // Helper property to get HAProxy format description
+        public string HAProxyFormatDescription => 
+            "HAProxy format combines Private Key + Certificate + CA Certificate in a single PEM file for easy deployment.";
+    }
     }
 }
 

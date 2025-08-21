@@ -1,4 +1,4 @@
-@model CertA.Models.CertificateEntity
+@model CertA.Controllers.CertificateDetailsVm
 @{
     ViewData["Title"] = "Certificate Details";
 }
@@ -9,39 +9,39 @@
     <div class="col-md-8">
         <dl class="row mt-3">
             <dt class="col-sm-3">Common Name</dt>
-            <dd class="col-sm-9">@Model.CommonName</dd>
+            <dd class="col-sm-9">@Model.Certificate.CommonName</dd>
 
-            @if (!string.IsNullOrEmpty(Model.SubjectAlternativeNames))
+            @if (!string.IsNullOrEmpty(Model.Certificate.SubjectAlternativeNames))
             {
                 <dt class="col-sm-3">Subject Alternative Names</dt>
-                <dd class="col-sm-9">@Model.SubjectAlternativeNames</dd>
+                <dd class="col-sm-9">@Model.Certificate.SubjectAlternativeNames</dd>
             }
 
             <dt class="col-sm-3">Serial Number</dt>
-            <dd class="col-sm-9"><code>@Model.SerialNumber</code></dd>
+            <dd class="col-sm-9"><code>@Model.Certificate.SerialNumber</code></dd>
 
             <dt class="col-sm-3">Status</dt>
             <dd class="col-sm-9">
-                <span class="badge bg-@(Model.Status == CertA.Models.CertificateStatus.Issued ? "success" : "warning")">@Model.Status</span>
+                <span class="badge bg-@(Model.Certificate.Status == CertA.Models.CertificateStatus.Issued ? "success" : "warning")">@Model.Certificate.Status</span>
             </dd>
 
             <dt class="col-sm-3">Type</dt>
-            <dd class="col-sm-9">@Model.Type</dd>
+            <dd class="col-sm-9">@Model.Certificate.Type</dd>
 
             <dt class="col-sm-3">Issued Date</dt>
-            <dd class="col-sm-9">@Model.IssuedDate.ToString("yyyy-MM-dd HH:mm:ss UTC")</dd>
+            <dd class="col-sm-9">@Model.Certificate.IssuedDate.ToString("yyyy-MM-dd HH:mm:ss UTC")</dd>
 
             <dt class="col-sm-3">Expiry Date</dt>
             <dd class="col-sm-9">
                 @{
-                    var isExpired = Model.ExpiryDate < DateTime.UtcNow;
+                    var isExpired = Model.Certificate.ExpiryDate < DateTime.UtcNow;
                     var expiryClass = isExpired ? "text-danger" : "text-muted";
                 }
-                <span class="@expiryClass">@Model.ExpiryDate.ToString("yyyy-MM-dd HH:mm:ss UTC")</span>
+                <span class="@expiryClass">@Model.Certificate.ExpiryDate.ToString("yyyy-MM-dd HH:mm:ss UTC")</span>
             </dd>
 
             <dt class="col-sm-3">Validity Period</dt>
-            <dd class="col-sm-9">@((Model.ExpiryDate - Model.IssuedDate).Days) days</dd>
+            <dd class="col-sm-9">@((Model.Certificate.ExpiryDate - Model.Certificate.IssuedDate).Days) days</dd>
         </dl>
     </div>
 
@@ -54,16 +54,19 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a asp-action="DownloadCertificate" asp-route-id="@Model.Id" class="btn btn-primary">
+                    <a asp-action="DownloadCertificate" asp-route-id="@Model.Certificate.Id" class="btn btn-primary">
                         <i class="bi bi-file-earmark-certificate"></i> Certificate (PEM)
                     </a>
-                    <a asp-action="DownloadPrivateKey" asp-route-id="@Model.Id" class="btn btn-danger">
+                    <a asp-action="DownloadPrivateKey" asp-route-id="@Model.Certificate.Id" class="btn btn-danger">
                         <i class="bi bi-key"></i> Private Key (PEM)
                     </a>
-                    <a asp-action="DownloadPublicKey" asp-route-id="@Model.Id" class="btn btn-info">
+                    <a asp-action="DownloadPublicKey" asp-route-id="@Model.Certificate.Id" class="btn btn-info">
                         <i class="bi bi-key-fill"></i> Public Key (PEM)
                     </a>
-                    <a asp-action="DownloadPfx" asp-route-id="@Model.Id" class="btn btn-success">
+                    <a asp-action="DownloadHAProxy" asp-route-id="@Model.Certificate.Id" class="btn btn-warning">
+                        <i class="bi bi-server"></i> HAProxy Format
+                    </a>
+                    <a asp-action="DownloadPfx" asp-route-id="@Model.Certificate.Id" class="btn btn-success">
                         <i class="bi bi-file-earmark-zip"></i> PFX/PKCS#12
                     </a>
                 </div>
@@ -84,7 +87,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <pre class="bg-light p-3 rounded"><code>@Model.CertificatePem</code></pre>
+                <pre class="bg-light p-3 rounded"><code>@Model.Certificate.CertificatePem</code></pre>
             </div>
         </div>
     </div>
@@ -99,7 +102,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <pre class="bg-light p-3 rounded"><code>@Model.PublicKeyPem</code></pre>
+                <pre class="bg-light p-3 rounded"><code>@Model.Certificate.PublicKeyPem</code></pre>
             </div>
         </div>
     </div>
@@ -118,7 +121,26 @@
                     <i class="bi bi-shield-exclamation"></i>
                     <strong>Security Warning:</strong> This is your private key. Keep it secure and never share it with anyone.
                 </div>
-                <pre class="bg-light p-3 rounded"><code>@Model.PrivateKeyPem</code></pre>
+                <pre class="bg-light p-3 rounded"><code>@Model.Certificate.PrivateKeyPem</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-server"></i> HAProxy Ready Format (PEM)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>HAProxy Format:</strong> This combines Private Key + Certificate + CA Certificate in the correct order for HAProxy deployment.
+                </div>
+                <pre class="bg-light p-3 rounded"><code>@Model.HAProxyContent</code></pre>
             </div>
         </div>
     </div>

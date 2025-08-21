@@ -20,6 +20,7 @@ namespace CertA.Services
         Task<byte[]> GetPublicKeyPemAsync(int id, string userId);
         Task<byte[]> GetCertificatePemAsync(int id, string userId);
         Task<byte[]> GetPfxAsync(int id, string password, string userId);
+        Task<byte[]> GetHAProxyFormatAsync(int id, string userId);
         Task<List<CertificateEntity>> GetExpiringCertificatesAsync(int daysThreshold = 30);
     }
 
@@ -211,6 +212,43 @@ namespace CertA.Services
             {
                 _logger.LogError(ex, "Failed to generate PFX for certificate {Id} by user {UserId}", id, userId);
                 throw new InvalidOperationException("Failed to generate PFX file");
+            }
+        }
+
+        public async Task<byte[]> GetHAProxyFormatAsync(int id, string userId)
+        {
+            var cert = await _db.Certificates
+                .Where(c => c.Id == id && c.UserId == userId)
+                .FirstOrDefaultAsync();
+            if (cert?.CertificatePem == null || cert?.PrivateKeyPem == null)
+                throw new InvalidOperationException("Certificate or private key not found");
+
+            try
+            {
+                // Get CA certificate
+                var ca = await _caService.GetActiveCAAsync();
+                if (ca == null)
+                    throw new InvalidOperationException("Certificate Authority not found");
+
+                // HAProxy format: Private Key + Certificate + CA Certificate
+                var haproxyContent = new StringBuilder();
+                
+                // Add private key
+                haproxyContent.AppendLine(cert.PrivateKeyPem);
+                
+                // Add certificate
+                haproxyContent.AppendLine(cert.CertificatePem);
+                
+                // Add CA certificate
+                haproxyContent.AppendLine(ca.CertificatePem);
+
+                _logger.LogInformation("Generated HAProxy format for certificate {Id} by user {UserId}", id, userId);
+                return Encoding.UTF8.GetBytes(haproxyContent.ToString());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate HAProxy format for certificate {Id} by user {UserId}", id, userId);
+                throw new InvalidOperationException("Failed to generate HAProxy format");
             }
         }
 

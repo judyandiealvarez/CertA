@@ -60,7 +60,18 @@ namespace CertA.Controllers
 
                 var cert = await _service.GetAsync(id, userId);
                 if (cert == null) return NotFound();
-                return View(cert);
+
+                // Generate HAProxy content for display
+                var haproxyBytes = await _service.GetHAProxyFormatAsync(id, userId);
+                var haproxyContent = System.Text.Encoding.UTF8.GetString(haproxyBytes);
+
+                var viewModel = new CertificateDetailsVm
+                {
+                    Certificate = cert,
+                    HAProxyContent = haproxyContent
+                };
+
+                return View(viewModel);
             }
             catch (Exception ex)
             {
@@ -193,6 +204,29 @@ namespace CertA.Controllers
             }
         }
 
+        public async Task<IActionResult> DownloadHAProxy(int id)
+        {
+            try
+            {
+                var userId = _userManager.GetUserId(User);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var cert = await _service.GetAsync(id, userId);
+                if (cert == null) return NotFound();
+
+                var bytes = await _service.GetHAProxyFormatAsync(id, userId);
+                var fileName = $"{cert.CommonName.Replace(" ", "_")}_haproxy.pem";
+                return File(bytes, "application/x-pem-file", fileName);
+            }
+            catch (Exception ex)
+            {
+                return NotFound();
+            }
+        }
+
         [AllowAnonymous]
         public async Task<IActionResult> Authority()
         {
@@ -293,6 +327,12 @@ namespace CertA.Controllers
         public string? SubjectAlternativeNames { get; set; }
 
         public CertificateType Type { get; set; } = CertificateType.Server;
+    }
+
+    public class CertificateDetailsVm
+    {
+        public CertificateEntity Certificate { get; set; } = null!;
+        public string HAProxyContent { get; set; } = string.Empty;
     }
 }
 
