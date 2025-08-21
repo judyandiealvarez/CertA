@@ -1,6 +1,24 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: certa-postgres
+    environment:
+      POSTGRES_DB: certa
+      POSTGRES_USER: certa
+      POSTGRES_PASSWORD: certa123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U certa -d certa"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   certa-app:
     build:
       context: .
@@ -13,6 +31,9 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=certa;Username=certa;Password=certa123;Port=5432
       - ASPNETCORE_DATA_PROTECTION__DEFAULT_KEY_LIFETIME=90
       - ASPNETCORE_DATA_PROTECTION__KEY_RING_AUTO_GENERATE_KEYS=true
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -21,25 +42,5 @@ services:
       retries: 3
       start_period: 40s
 
-  # Optional: Local PostgreSQL for development
-  # Uncomment if you want to run PostgreSQL locally instead of using external database
-  # postgres:
-  #   image: postgres:15-alpine
-  #   container_name: certa-postgres
-  #   environment:
-  #     POSTGRES_DB: certa
-  #     POSTGRES_USER: certa
-  #     POSTGRES_PASSWORD: certa123
-  #   ports:
-  #     - "5433:5432"
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   restart: unless-stopped
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U certa -d certa"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-
-# volumes:
-#   postgres_data:
+volumes:
+  postgres_data:
