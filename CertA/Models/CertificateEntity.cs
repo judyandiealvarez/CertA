@@ -77,7 +77,6 @@ namespace CertA.Models
         public string HAProxyFormatDescription => 
             "HAProxy format combines Private Key + Certificate + CA Certificate in a single PEM file for easy deployment.";
     }
-    }
 }
 
 
