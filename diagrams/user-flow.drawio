@@ -15,11 +15,11 @@
           <mxGeometry x="50" y="80" width="200" height="40" as="geometry" />
         </mxCell>
         
-        <mxCell id="home-page" value="Home Page&#xa;(Public)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=center;" vertex="1" parent="1">
+        <mxCell id="home-page" value="Home Page (Public)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=center;" vertex="1" parent="1">
           <mxGeometry x="70" y="140" width="80" height="50" as="geometry" />
         </mxCell>
         
-        <mxCell id="ca-info" value="CA Information&#xa;(Public)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=center;" vertex="1" parent="1">
+        <mxCell id="ca-info" value="CA Information (Public)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=center;" vertex="1" parent="1">
           <mxGeometry x="170" y="140" width="80" height="50" as="geometry" />
         </mxCell>
         
@@ -36,12 +36,12 @@
           <mxGeometry x="420" y="140" width="80" height="40" as="geometry" />
         </mxCell>
         
-        <mxCell id="auth-validation" value="Authentication&#xa;Validation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;" vertex="1" parent="1">
+        <mxCell id="auth-validation" value="Authentication Validation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;" vertex="1" parent="1">
           <mxGeometry x="370" y="200" width="80" height="50" as="geometry" />
         </mxCell>
         
         <!-- Dashboard -->
-        <mxCell id="dashboard" value="Dashboard&#xa;(Authenticated)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;align=center;" vertex="1" parent="1">
+        <mxCell id="dashboard" value="Dashboard (Authenticated)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;align=center;" vertex="1" parent="1">
           <mxGeometry x="370" y="280" width="80" height="50" as="geometry" />
         </mxCell>
         
@@ -88,19 +88,19 @@
           <mxGeometry x="50" y="350" width="200" height="40" as="geometry" />
         </mxCell>
         
-        <mxCell id="cert-form" value="Certificate Form&#xa;• Common Name&#xa;• Subject Alt Names&#xa;• Certificate Type" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="cert-form" value="Certificate Form• Common Name• Subject Alt Names• Certificate Type" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="70" y="410" width="80" height="80" as="geometry" />
         </mxCell>
         
-        <mxCell id="validation" value="Validation&#xa;• Format Check&#xa;• User Permissions&#xa;• CA Availability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="validation" value="Validation• Format Check• User Permissions• CA Availability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="170" y="410" width="80" height="80" as="geometry" />
         </mxCell>
         
-        <mxCell id="cert-generation" value="Certificate Generation&#xa;• Key Pair Creation&#xa;• CSR Generation&#xa;• CA Signing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="cert-generation" value="Certificate Generation• Key Pair Creation• CSR Generation• CA Signing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="70" y="510" width="80" height="80" as="geometry" />
         </mxCell>
         
-        <mxCell id="storage" value="Storage&#xa;• Database Save&#xa;• User Association&#xa;• Audit Log" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="storage" value="Storage• Database Save• User Association• Audit Log" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="170" y="510" width="80" height="80" as="geometry" />
         </mxCell>
         
@@ -109,15 +109,15 @@
           <mxGeometry x="300" y="350" width="200" height="40" as="geometry" />
         </mxCell>
         
-        <mxCell id="download-options" value="Download Options&#xa;• Certificate (PEM)&#xa;• Private Key (PEM)&#xa;• Public Key (PEM)&#xa;• PFX/PKCS#12" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="download-options" value="Download Options• Certificate (PEM)• Private Key (PEM)• Public Key (PEM)• PFX/PKCS#12" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="320" y="410" width="80" height="100" as="geometry" />
         </mxCell>
         
-        <mxCell id="security-check" value="Security Check&#xa;• User Ownership&#xa;• Certificate Access&#xa;• Download Logging" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="security-check" value="Security Check• User Ownership• Certificate Access• Download Logging" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="420" y="410" width="80" height="100" as="geometry" />
         </mxCell>
         
-        <mxCell id="file-generation" value="File Generation&#xa;• Format Conversion&#xa;• Password Protection&#xa;• Secure Delivery" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="file-generation" value="File Generation• Format Conversion• Password Protection• Secure Delivery" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="370" y="530" width="80" height="80" as="geometry" />
         </mxCell>
         
@@ -126,15 +126,15 @@
           <mxGeometry x="550" y="350" width="200" height="40" as="geometry" />
         </mxCell>
         
-        <mxCell id="user-isolation" value="User Isolation&#xa;• Data Separation&#xa;• Access Control&#xa;• Ownership Validation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="user-isolation" value="User Isolation• Data Separation• Access Control• Ownership Validation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="570" y="410" width="80" height="80" as="geometry" />
         </mxCell>
         
-        <mxCell id="session-management" value="Session Management&#xa;• Cookie Security&#xa;• Timeout Handling&#xa;• CSRF Protection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="session-management" value="Session Management• Cookie Security• Timeout Handling• CSRF Protection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="670" y="410" width="80" height="80" as="geometry" />
         </mxCell>
         
-        <mxCell id="audit-logging" value="Audit Logging&#xa;• Certificate Operations&#xa;• User Actions&#xa;• Security Events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="audit-logging" value="Audit Logging• Certificate Operations• User Actions• Security Events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="620" y="510" width="80" height="80" as="geometry" />
         </mxCell>
         
@@ -143,15 +143,15 @@
           <mxGeometry x="800" y="350" width="200" height="40" as="geometry" />
         </mxCell>
         
-        <mxCell id="validation-errors" value="Validation Errors&#xa;• Input Validation&#xa;• Format Errors&#xa;• Permission Denied" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="validation-errors" value="Validation Errors• Input Validation• Format Errors• Permission Denied" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="820" y="410" width="80" height="80" as="geometry" />
         </mxCell>
         
-        <mxCell id="system-errors" value="System Errors&#xa;• Database Errors&#xa;• CA Unavailable&#xa;• Network Issues" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="system-errors" value="System Errors• Database Errors• CA Unavailable• Network Issues" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="920" y="410" width="80" height="80" as="geometry" />
         </mxCell>
         
-        <mxCell id="error-recovery" value="Error Recovery&#xa;• User Feedback&#xa;• Retry Mechanisms&#xa;• Fallback Options" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
+        <mxCell id="error-recovery" value="Error Recovery• User Feedback• Retry Mechanisms• Fallback Options" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" vertex="1" parent="1">
           <mxGeometry x="870" y="510" width="80" height="80" as="geometry" />
         </mxCell>
         
